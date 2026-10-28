@@ -138,12 +138,11 @@ Or serve it locally:
 npx serve .
 ```
 
-Two URL flags are useful while working on it:
+One URL flag is useful while working on it:
 
 | Add to the URL | What it does |
 |---|---|
 | `?intro` | Plays the intro again, even if you've already seen it this session. |
-| `?debug` | Shows a small panel to skip the countdown forward, replay the intro, and try other display fonts. |
 
 <br>
 
