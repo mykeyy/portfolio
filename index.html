@@ -57,16 +57,23 @@
       max-width: 1760px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(0, var(--col)) minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, var(--col)) minmax(0, 1fr) minmax(0, calc(var(--col) * 1.3));
       grid-template-rows: 1fr auto;
       grid-template-areas:
-        "quote quote quote"
-        "timer donut links";
+        "top   top top"
+        "timer .   links";
       gap: clamp(24px, 4vh, 48px) 32px;
     }
 
+    /* Top row: the headline on the left, the donut filling the open space to its right */
+    .top {
+      grid-area: top;
+      display: flex;
+      gap: 32px;
+    }
+
     .hero {
-      grid-area: quote;
+      flex: none;
       align-self: start;
       display: grid;
       gap: clamp(12px, 2vw, 28px);
@@ -92,10 +99,11 @@
       transition: opacity 0.6s ease-out 0.45s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s;
     }
 
-    /* The classic spinning ASCII donut, faint, in the open space between the countdown and the links.
+    /* The classic spinning ASCII donut, faint, in the open space right of the headline.
        It sizes itself to that space (container units), so it never runs into the text on any screen. */
     .donut {
-      grid-area: donut;
+      flex: 1;
+      min-width: 0;
       container-type: size;
       display: grid;
       place-items: center;
@@ -143,8 +151,12 @@
       font-size: clamp(2.8rem, min(9vw, 16vh), 11rem);
       line-height: 0.95;
       letter-spacing: 0.01em;
-      max-width: 20ch;
-      text-wrap: balance;
+    }
+
+    /* Two fixed lines on desktop, so the headline is only as wide as its text */
+    h1 .line {
+      display: block;
+      white-space: nowrap;
     }
 
     /* Intro: "myky.cc" types itself out, then the cover lifts off the page.
@@ -211,7 +223,7 @@
     .timer-label {
       font-family: var(--mono);
       font-weight: 700;
-      font-size: clamp(0.7rem, 1vw, 0.95rem);
+      font-size: max(0.65rem, calc(var(--size) * 0.22));
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -235,7 +247,8 @@
     .unit small {
       font-family: var(--mono);
       font-weight: 700;
-      font-size: clamp(0.65rem, 1.4vw, 0.8rem);
+      /* Labels scale with the digits so they keep the same proportion on every screen */
+      font-size: max(0.65rem, calc(var(--size) * 0.22));
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -419,19 +432,22 @@
     /* Social links: a white bar slides in behind the link on hover */
     /* The links stretch to the same height as the status/countdown column beside them,
        so the first link lines up with the card's top and the last with the button's bottom */
+    /* The link size is worked out from the column's height (container units): the four links
+       fill the same height as the card + countdown + button, stay close together, and grow with them */
     nav {
       grid-area: links;
       align-self: stretch;
-      justify-self: end;
+      justify-self: stretch;
+      container-type: size;
     }
 
     .links {
       height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: flex-end;
-      gap: 4px;
+      gap: calc(100cqh / 45);
       list-style: none;
       text-align: right;
     }
@@ -446,7 +462,7 @@
       white-space: nowrap;
       font-family: var(--mono);
       font-weight: 700;
-      font-size: clamp(1.4rem, 3.4vw, 3.2rem);
+      font-size: min(calc(100cqh / 6), calc(100cqw / 7.4));
       line-height: 1.1;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -499,40 +515,46 @@
       color: var(--ink);
     }
 
-    /* Phone: everything fits on one screen with no scrolling.
-       Sizes follow the visible screen height (svh leaves out the browser bars), so short phones shrink to fit. */
-    @media (max-width: 640px) {
+    /* Compact (phones, tablets, 3:4 screens): one column that fits one screen with no scrolling.
+       --u is the base size; it follows both width and visible height (svh leaves out the browser bars),
+       so everything grows on a tablet and shrinks on a short phone, keeping the same proportions. */
+    @media (max-width: 1023px) {
       :root {
-        --pad: 16px;
-        --size: clamp(1.9rem, 5.2svh, 2.6rem);
+        --pad: clamp(16px, 3vw, 32px);
+        --u: clamp(14px, min(3.6vw, 2.3svh), 22px);
+        --size: clamp(1.9rem, min(11vw, 6svh), 4.5rem);
       }
-      body { padding: var(--pad) 16px; }
+      body { padding: var(--pad); }
+      /* Capped width so the countdown digits and link buttons stay close together on tablets */
       main {
+        max-width: 560px;
         min-height: calc(100vh - 2 * var(--pad));
         min-height: calc(100svh - 2 * var(--pad));
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: auto 1fr auto;
         grid-template-areas:
-          "quote"
+          "top"
           "timer"
           "links";
         gap: 16px;
       }
-      .hero { gap: 10px; }
-      h1 { font-size: min(19vw, 8.5svh); }
-      .sub { font-size: clamp(0.85rem, 2svh, 1.05rem); }
+      .top { display: block; }
+      h1 { font-size: min(19vw, 10svh); text-wrap: balance; }
+      h1 .line { display: inline; white-space: normal; }
+      .sub { display: none; }
       .countdown { width: 100%; gap: 10px; }
-      .presence { padding: 12px; gap: 12px; }
-      .presence img { width: 60px; height: 60px; }
-      .presence .name { font-size: 1.1rem; }
-      .presence .status { font-size: 0.8rem; }
-      .presence .activity { font-size: 0.9rem; }
-      .presence .note { width: 18px; height: 18px; }
-      .timer { padding: 12px 14px 10px; gap: 8px; }
-      .remind { padding: 12px; font-size: 0.9rem; }
+      .presence { padding: calc(var(--u) * 0.85); gap: calc(var(--u) * 0.85); }
+      .presence img { width: calc(var(--u) * 4.3); height: calc(var(--u) * 4.3); }
+      .presence .name { font-size: calc(var(--u) * 1.2); }
+      .presence .status { font-size: calc(var(--u) * 0.85); }
+      .presence .activity { font-size: calc(var(--u) * 0.95); }
+      .presence .note { width: calc(var(--u) * 1.2); height: calc(var(--u) * 1.2); }
+      .timer { padding: calc(var(--u) * 0.85) calc(var(--u) * 1) calc(var(--u) * 0.7); gap: calc(var(--u) * 0.55); }
+      .remind { min-height: calc(var(--u) * 3.2); padding: 0 12px; font-size: var(--u); }
+      .remind svg { width: calc(var(--u) * 1.25); height: calc(var(--u) * 1.25); }
 
       /* Links become a 2x2 grid of outlined buttons: big enough to tap, short enough to fit */
-      nav { justify-self: stretch; align-self: end; }
+      nav { container-type: normal; justify-self: stretch; align-self: end; }
       .links {
         height: auto;
         display: grid;
@@ -543,12 +565,17 @@
       .links a {
         flex: 1;
         justify-content: center;
-        min-height: 44px;
+        min-height: calc(var(--u) * 3.2);
         padding: 0 12px;
         border: 2px solid var(--paper);
-        font-size: 1rem;
+        font-size: calc(var(--u) * 1.1);
       }
       .links svg { width: 1.2em; height: 1.2em; }
+    }
+
+    /* Very short screens (small phones): a slightly smaller headline keeps it to two lines */
+    @media (max-width: 1023px) and (max-height: 600px) {
+      h1 { font-size: min(19vw, 8.5svh); }
     }
 
     /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
@@ -568,12 +595,14 @@
   <div class="intro" aria-hidden="true"><span class="intro-word">myky.cc</span></div>
 
   <main>
-    <header class="hero">
-      <h1>The birds are still sleeping.</h1>
-      <p class="sub">Coming soon. My portfolio is on its way.</p>
-    </header>
+    <div class="top">
+      <header class="hero">
+        <h1><span class="line">The birds are</span> <span class="line">still sleeping.</span></h1>
+        <p class="sub">Coming soon. My portfolio is on its way.</p>
+      </header>
 
-    <div class="donut" aria-hidden="true"><pre id="donut"></pre></div>
+      <div class="donut" aria-hidden="true"><pre id="donut"></pre></div>
+    </div>
 
     <div class="countdown">
       <aside class="presence" id="presence" hidden>
@@ -589,7 +618,7 @@
       </aside>
 
       <div class="timer" role="timer" aria-label="Time until my portfolio opens">
-        <p class="timer-label">My portfolio opens in</p>
+        <p class="timer-label">Portfolio opens in</p>
         <div class="units">
           <div class="unit" data-unit="days"><div class="digits"></div><small>Days</small></div>
           <div class="unit" data-unit="hours"><div class="digits"></div><small>Hrs</small></div>
@@ -623,18 +652,22 @@
 
     // Split the headline into masked words so they can rise in one after another.
     const headline = document.querySelector("h1");
-    const words = headline.textContent.trim().split(/\s+/);
-    headline.replaceChildren();
-    headline.classList.add("split");
-    words.forEach((text, i) => {
-      const mask = document.createElement("span");
-      mask.className = "w";
-      const word = document.createElement("span");
-      word.textContent = text;
-      word.style.setProperty("--i", i);
-      mask.appendChild(word);
-      headline.append(mask, " ");
+    let wordIndex = 0;
+    headline.querySelectorAll(".line").forEach((line) => {
+      const words = line.textContent.trim().split(/\s+/);
+      line.replaceChildren();
+      words.forEach((text, n) => {
+        const mask = document.createElement("span");
+        mask.className = "w";
+        const word = document.createElement("span");
+        word.textContent = text;
+        word.style.setProperty("--i", wordIndex++);
+        mask.appendChild(word);
+        line.append(mask);
+        if (n < words.length - 1) line.append(" ");
+      });
     });
+    headline.classList.add("split");
 
     function revealHeadline(delay = 0) {
       setTimeout(() => requestAnimationFrame(() => headline.classList.add("go")), delay);
