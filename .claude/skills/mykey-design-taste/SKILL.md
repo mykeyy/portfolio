@@ -18,6 +18,7 @@ Who: Mykey Nishikawa, an independent developer and designer. Works fast, decides
 - Things that sit side by side or stacked share a size. The card, countdown, and button share a width (`--col`); the links block matches that stack's height. A mismatch looks broken to him.
 - Visitors must understand the countdown means "portfolio not ready yet". Keep the label on it.
 - No extra info he did not ask for (a local-time clock was removed).
+- No scrolling on any screen, phone or desktop. Everything a visitor needs fits in one viewport; size with svh/vh so short screens shrink to fit. Test 320x568 up to 2560x1440.
 - Mobile is the priority. Headline, status card, countdown, and links all get bigger on phones, not smaller. Nothing may overflow at 375px.
 - Empty space is part of the design. Do not fill it to balance the page.
 

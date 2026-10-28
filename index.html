@@ -488,39 +488,67 @@
       flex: none;
     }
 
-    /* Phone: one column, in reading order: headline, clock, status + countdown, links */
+    /* Touch has no hover, so the white bar also shows while a link is pressed */
+    .links a:active::before,
+    .remind:active::before {
+      transform: scaleX(1);
+    }
+
+    .links a:active,
+    .remind:active {
+      color: var(--ink);
+    }
+
+    /* Phone: everything fits on one screen with no scrolling.
+       Sizes follow the visible screen height (svh leaves out the browser bars), so short phones shrink to fit. */
     @media (max-width: 640px) {
+      :root {
+        --pad: 16px;
+        --size: clamp(1.9rem, 5.2svh, 2.6rem);
+      }
+      body { padding: var(--pad) 16px; }
       main {
+        min-height: calc(100vh - 2 * var(--pad));
+        min-height: calc(100svh - 2 * var(--pad));
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto;
+        grid-template-rows: auto 1fr auto;
         grid-template-areas:
           "quote"
           "timer"
           "links";
-        gap: 36px;
+        gap: 16px;
       }
-      nav { align-self: start; }
-      .links { height: auto; }
-      .countdown { width: 100%; }
-      nav { justify-self: start; }
-      .links { align-items: flex-start; text-align: left; }
-      .links a { padding-left: 0; }
-    }
+      .hero { gap: 10px; }
+      h1 { font-size: min(19vw, 8.5svh); }
+      .sub { font-size: clamp(0.85rem, 2svh, 1.05rem); }
+      .countdown { width: 100%; gap: 10px; }
+      .presence { padding: 12px; gap: 12px; }
+      .presence img { width: 60px; height: 60px; }
+      .presence .name { font-size: 1.1rem; }
+      .presence .status { font-size: 0.8rem; }
+      .presence .activity { font-size: 0.9rem; }
+      .presence .note { width: 18px; height: 18px; }
+      .timer { padding: 12px 14px 10px; gap: 8px; }
+      .remind { padding: 12px; font-size: 0.9rem; }
 
-    /* Phone: bigger headline, status card, countdown, and links so they read at arm's length */
-    @media (max-width: 640px) {
-      :root { --size: 2.6rem; }
-      h1 { font-size: 19vw; }
-      .sub { font-size: 1.1rem; }
-      .presence { padding: 18px; gap: 18px; }
-      .presence img { width: 84px; height: 84px; }
-      .presence .name { font-size: 1.3rem; }
-      .presence .status { font-size: 0.9rem; }
-      .presence .activity { font-size: 1rem; }
-      .presence .note { width: 20px; height: 20px; }
-      .links { gap: 10px; }
-      .links a { font-size: clamp(2.2rem, 11vw, 3rem); }
-      .remind { padding: 16px; font-size: 1rem; }
+      /* Links become a 2x2 grid of outlined buttons: big enough to tap, short enough to fit */
+      nav { justify-self: stretch; align-self: end; }
+      .links {
+        height: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .links li { display: flex; }
+      .links a {
+        flex: 1;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 12px;
+        border: 2px solid var(--paper);
+        font-size: 1rem;
+      }
+      .links svg { width: 1.2em; height: 1.2em; }
     }
 
     /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
