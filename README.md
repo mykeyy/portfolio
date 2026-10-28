@@ -93,6 +93,22 @@ No scrolling, on anything. The layout is sized from the space it has, not from a
 
 <br>
 
+## Link preview
+
+Paste `myky.cc` into Discord, X, iMessage, or Slack and it unfurls into a card: a blue edge (Discord paints it from `theme-color`), the title **Mykey Nishikawa**, and a 16:9 image of the name beside a face-on ASCII donut.
+
+<div align="center">
+
+<img src="og.png" alt="The link preview image: Mykey Nishikawa in white on blue, beside an ASCII donut drawn like a zero" width="70%">
+
+</div>
+
+- The image is [`og.png`](og.png), 1200 &times; 675. Its source is [`assets/og.html`](assets/og.html): open it in a browser and screenshot it at that size, or render it with headless Chrome.
+- The tags live in the `<head>` of [`index.html`](index.html). They point at `https://myky.cc/og.png`, so `og.png` has to be served from the site root when the page goes live.
+- Discord and X cache previews. If you change the image, post the link with a throwaway query string (`https://myky.cc/?v=2`) to see the new one.
+
+<br>
+
 ## About me
 
 I'm Mykey Nishikawa, an independent developer and designer based in the Philippines.
@@ -150,8 +166,9 @@ The Discord card is powered by [Lanyard](https://github.com/Phineas/lanyard). To
 
 ```
 index.html     the whole site
+og.png         the link-preview image (serve it next to index.html)
 PRODUCT.md     what the page is for, its tone, and what it avoids
-assets/        screenshots used in this README
+assets/        screenshots for this README, and og.html, the source of og.png
 .claude/       design notes for working on the page with Claude Code
 .impeccable/   design-check settings
 ```
