@@ -18,6 +18,10 @@ Who: Mykey Nishikawa, an independent developer and designer. Works fast, decides
 - Things that sit side by side or stacked share a size. The card, countdown, and button share a width (`--col`); the links block matches that stack's height. A mismatch looks broken to him.
 - Visitors must understand the countdown means "portfolio not ready yet". Keep the label on it.
 - No extra info he did not ask for (a local-time clock was removed).
+- Responsive means proportional, not capped. On desktop the links are sized from the left column's height so they fill it top to bottom with comfortable gaps (not clustered, not stretched apart). On phones the headline is sized to span the same width as the cards. Use container units (cqw/cqh) and svh rather than breakpoint guesses.
+- Use svh, never dvh, for anything layout-related. dvh changes as mobile browser bars slide away and causes jitter.
+- The countdown roll must be quick (about 0.35s). A slow roll reads as stutter.
+- GitHub, Discord, and email links show a HugeIcons logo plus the word; X shows its logo only.
 - No scrolling on any screen, phone or desktop. Everything a visitor needs fits in one viewport; size with svh/vh so short screens shrink to fit. Test 320x568 up to 2560x1440.
 - Mobile is the priority. Headline, status card, countdown, and links all get bigger on phones, not smaller. Nothing may overflow at 375px.
 - Empty space is part of the design. Do not fill it to balance the page.

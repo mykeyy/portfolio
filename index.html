@@ -41,9 +41,11 @@
 
     ::selection { background: var(--paper); color: var(--ink); }
 
+    /* svh is the screen height with the browser bars showing. Unlike dvh it never changes while the
+       bars slide away, so nothing resizes or jitters as the visitor touches the page. */
     body {
       min-height: 100vh;
-      min-height: 100dvh;
+      min-height: 100svh;
       padding: var(--pad) max(16px, var(--pad));
       font-family: var(--display);
     }
@@ -53,7 +55,8 @@
     main {
       position: relative;
       z-index: 1;
-      min-height: calc(100dvh - 2 * var(--pad));
+      min-height: calc(100vh - 2 * var(--pad));
+      min-height: calc(100svh - 2 * var(--pad));
       max-width: 1760px;
       margin: 0 auto;
       display: grid;
@@ -153,11 +156,10 @@
       letter-spacing: 0.01em;
     }
 
-    /* Two fixed lines on desktop, so the headline is only as wide as its text */
-    h1 .line {
-      display: block;
-      white-space: nowrap;
-    }
+    /* The line breaks are written into the markup, so the headline only wraps where it is meant to:
+       desktop breaks after "are" (.d); phones break after "birds" and "still" (.c) */
+    h1 { white-space: nowrap; }
+    h1 .c { display: none; }
 
     /* Intro: "myky.cc" types itself out, then the cover lifts off the page.
        The page underneath is always rendered, and the cover hides itself after 6s even if the script fails. */
@@ -188,8 +190,15 @@
       white-space: pre;
     }
 
+    /* The blinking cursor sits just past the last letter without taking space, so the word stays centered */
+    .intro-word {
+      position: relative;
+    }
+
     .intro-word::after {
       content: "_";
+      position: absolute;
+      left: 100%;
       animation: caret 0.9s steps(1) infinite;
     }
 
@@ -271,7 +280,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+      /* A quick roll: the old digit is gone in a third of a second, so a changing digit reads as a
+         crisp tick. The old 0.9s roll meant the seconds digit was almost always mid-flight, which looked like stutter. */
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: transform;
     }
 
@@ -429,11 +440,10 @@
       to { transform: translateX(-50%); }
     }
 
-    /* Social links: a white bar slides in behind the link on hover */
-    /* The links stretch to the same height as the status/countdown column beside them,
-       so the first link lines up with the card's top and the last with the button's bottom */
-    /* The link size is worked out from the column's height (container units): the four links
-       fill the same height as the card + countdown + button, stay close together, and grow with them */
+    /* Social links: a white bar slides in behind the link on hover.
+       The nav stretches to the same height as the status/countdown column beside it, and the link size is
+       worked out from that height (container units). The four links are sized so they fill the column from
+       its top edge to its bottom edge with an even, comfortable gap, and grow and shrink with it. */
     nav {
       grid-area: links;
       align-self: stretch;
@@ -445,9 +455,8 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: flex-end;
-      gap: calc(100cqh / 45);
       list-style: none;
       text-align: right;
     }
@@ -462,7 +471,7 @@
       white-space: nowrap;
       font-family: var(--mono);
       font-weight: 700;
-      font-size: min(calc(100cqh / 6), calc(100cqw / 7.4));
+      font-size: min(calc(100cqh / 7.2), calc(100cqw / 8.4));
       line-height: 1.1;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -497,10 +506,15 @@
       transform: scaleX(1);
     }
 
+    /* HugeIcons, drawn in one stroke style like the note and calendar icons */
     .links svg {
       width: 0.9em;
       height: 0.9em;
-      fill: currentColor;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
       flex: none;
     }
 
@@ -531,16 +545,29 @@
         min-height: calc(100vh - 2 * var(--pad));
         min-height: calc(100svh - 2 * var(--pad));
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: minmax(0, 1fr) auto auto;
         grid-template-areas:
           "top"
           "timer"
           "links";
         gap: 16px;
       }
-      .top { display: block; }
-      h1 { font-size: min(19vw, 10svh); text-wrap: balance; }
-      h1 .line { display: inline; white-space: normal; }
+
+      /* The headline takes whatever room the cards and buttons leave, and fills it: its font size is the
+         larger of what the widest line needs to span the full card width (--fit is that line's width in em,
+         measured by the script) and what three lines need to fit the height. Only svh-based sizes feed in,
+         so it never resizes while the browser bars slide away. */
+      .top {
+        container-type: size;
+        min-height: 0;
+        display: block;
+      }
+      h1 {
+        font-size: max(2rem, min(calc(100cqw / var(--fit, 4.4)), calc(100cqh / 2.9)));
+        letter-spacing: 0;
+      }
+      h1 .c { display: inline; }
+      h1 .d { display: none; }
       .sub { display: none; }
       .countdown { width: 100%; gap: 10px; }
       .presence { padding: calc(var(--u) * 0.85); gap: calc(var(--u) * 0.85); }
@@ -573,11 +600,6 @@
       .links svg { width: 1.2em; height: 1.2em; }
     }
 
-    /* Very short screens (small phones): a slightly smaller headline keeps it to two lines */
-    @media (max-width: 1023px) and (max-height: 600px) {
-      h1 { font-size: min(19vw, 8.5svh); }
-    }
-
     /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
     @media (prefers-reduced-motion: reduce) {
       .intro.lift { clip-path: inset(0 0 0 0); opacity: 0; transition: opacity 0.3s ease-out; }
@@ -597,7 +619,7 @@
   <main>
     <div class="top">
       <header class="hero">
-        <h1><span class="line">The birds are</span> <span class="line">still sleeping.</span></h1>
+        <h1>The birds<br class="c"> are<br class="d"> still<br class="c"> sleeping.</h1>
         <p class="sub">Coming soon. My portfolio is on its way.</p>
       </header>
 
@@ -637,12 +659,21 @@
     <nav>
       <ul class="links">
         <li><a href="https://x.com/mykeycc" target="_blank" rel="noopener" aria-label="X">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21L10.5484 13.4516M21 3L13.4516 10.5484M13.4516 10.5484L8 3H3L10.5484 13.4516M13.4516 10.5484L21 21H16L10.5484 13.4516"/></svg>
         </a></li>
-        <li><a href="https://github.com/mykeyy" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="https://discord.com/users/730104482033303602" target="_blank" rel="noopener">Discord</a></li>
+        <li><a href="https://github.com/mykeyy" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20.5675C6.57143 21.7248 3.71429 20.5675 2 17"/><path d="M10 22V18.7579C10 18.1596 10.1839 17.6396 10.4804 17.1699C10.6838 16.8476 10.5445 16.3904 10.1771 16.2894C7.13394 15.4528 5 14.1077 5 9.64606C5 8.48611 5.38005 7.39556 6.04811 6.4464C6.21437 6.21018 6.29749 6.09208 6.31748 5.9851C6.33746 5.87813 6.30272 5.73852 6.23322 5.45932C5.95038 4.32292 5.96871 3.11619 6.39322 2.02823C6.39322 2.02823 7.27042 1.74242 9.26698 2.98969C9.72282 3.27447 9.95075 3.41686 10.1515 3.44871C10.3522 3.48056 10.6206 3.41384 11.1573 3.28041C11.8913 3.09795 12.6476 3 13.5 3C14.3524 3 15.1087 3.09795 15.8427 3.28041C16.3794 3.41384 16.6478 3.48056 16.8485 3.44871C17.0493 3.41686 17.2772 3.27447 17.733 2.98969C19.7296 1.74242 20.6068 2.02823 20.6068 2.02823C21.0313 3.11619 21.0496 4.32292 20.7668 5.45932C20.6973 5.73852 20.6625 5.87813 20.6825 5.9851C20.7025 6.09207 20.7856 6.21019 20.9519 6.4464C21.6199 7.39556 22 8.48611 22 9.64606C22 14.1077 19.8661 15.4528 16.8229 16.2894C16.4555 16.3904 16.3162 16.8476 16.5196 17.1699C16.8161 17.6396 17 18.1596 17 18.7579V22"/></svg>
+          GitHub
+        </a></li>
+        <li><a href="https://discord.com/users/730104482033303602" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 17.5C16.5 19 17.3333 19.6667 18 20C19.3333 19.6667 22 18.2 22 15C22 11.8 20.6667 7.33333 20 5.5C18 4.3 15.8333 4 15 4L14.198 5.60393C13.4135 5.28708 12.4058 5.25438 12 5.27763C11.5942 5.25438 10.5865 5.28708 9.80197 5.60393L9 4C8.16667 4 6 4.3 4 5.5C3.33333 7.33333 2 11.8 2 15C2 18.2 4.66667 19.6667 6 20C6.66667 19.6667 7.5 19 8.5 17.5"/><path d="M17.3652 11.5C17.3652 12.6046 16.5817 13.5 15.6152 13.5C14.6487 13.5 13.8652 12.6046 13.8652 11.5C13.8652 10.3954 14.6487 9.5 15.6152 9.5C16.5817 9.5 17.3652 10.3954 17.3652 11.5Z"/><path d="M10 11.5C10 12.6046 9.2165 13.5 8.25 13.5C7.2835 13.5 6.5 12.6046 6.5 11.5C6.5 10.3954 7.2835 9.5 8.25 9.5C9.2165 9.5 10 10.3954 10 11.5Z"/><path d="M17.5 16.5C16.4022 17.3967 14.3502 18 12 18C9.64981 18 7.59785 17.3967 6.5 16.5"/></svg>
+          Discord
+        </a></li>
         <!-- Opens a new email with the subject already filled in -->
-        <li><a href="mailto:hello@mykeyy.tech?subject=Hello%20from%20myky.cc" id="contact">Contact me</a></li>
+        <li><a href="mailto:hello@mykeyy.tech?subject=Hello%20from%20myky.cc" id="contact">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6L8.91302 9.91697C11.4616 11.361 12.5384 11.361 15.087 9.91697L22 6"/><path d="M2.01577 13.4756C2.08114 16.5412 2.11383 18.0739 3.24496 19.2094C4.37608 20.3448 5.95033 20.3843 9.09883 20.4634C11.0393 20.5122 12.9607 20.5122 14.9012 20.4634C18.0497 20.3843 19.6239 20.3448 20.7551 19.2094C21.8862 18.0739 21.9189 16.5412 21.9842 13.4756C22.0053 12.4899 22.0053 11.5101 21.9842 10.5244C21.9189 7.45886 21.8862 5.92609 20.7551 4.79066C19.6239 3.65523 18.0497 3.61568 14.9012 3.53657C12.9607 3.48781 11.0393 3.48781 9.09882 3.53656C5.95033 3.61566 4.37608 3.65521 3.24495 4.79065C2.11382 5.92608 2.08114 7.45885 2.01576 10.5244C1.99474 11.5101 1.99475 12.4899 2.01577 13.4756Z"/></svg>
+          Contact me
+        </a></li>
       </ul>
     </nav>
   </main>
@@ -653,21 +684,42 @@
     // Split the headline into masked words so they can rise in one after another.
     const headline = document.querySelector("h1");
     let wordIndex = 0;
-    headline.querySelectorAll(".line").forEach((line) => {
-      const words = line.textContent.trim().split(/\s+/);
-      line.replaceChildren();
-      words.forEach((text, n) => {
+    // Only the text between the line breaks is wrapped; the <br> elements stay where the markup put them.
+    [...headline.childNodes].forEach((node) => {
+      if (node.nodeType !== Node.TEXT_NODE) return;
+      const parts = document.createDocumentFragment();
+      node.textContent.split(/(\s+)/).forEach((piece) => {
+        if (!piece) return;
+        if (/^\s+$/.test(piece)) {
+          parts.append(" ");
+          return;
+        }
         const mask = document.createElement("span");
         mask.className = "w";
         const word = document.createElement("span");
-        word.textContent = text;
+        word.textContent = piece;
         word.style.setProperty("--i", wordIndex++);
         mask.appendChild(word);
-        line.append(mask);
-        if (n < words.length - 1) line.append(" ");
+        parts.append(mask);
       });
+      node.replaceWith(parts);
     });
     headline.classList.add("split");
+
+    // On phones the headline is sized to span the card width. That needs the width of its widest line
+    // in em, which depends on the font, so measure it once the font has loaded (and again if the layout
+    // switches between phone and desktop). It never reads the screen height, so it cannot jitter.
+    const COMPACT = matchMedia("(max-width: 1023px)");
+    function measureHeadline() {
+      if (!COMPACT.matches) return;
+      const range = document.createRange();
+      range.selectNodeContents(headline);
+      const em = range.getBoundingClientRect().width / parseFloat(getComputedStyle(headline).fontSize);
+      if (em > 0) headline.style.setProperty("--fit", em.toFixed(3));
+    }
+    document.fonts.ready.then(measureHeadline);
+    addEventListener("load", measureHeadline);
+    COMPACT.addEventListener("change", measureHeadline);
 
     function revealHeadline(delay = 0) {
       setTimeout(() => requestAnimationFrame(() => headline.classList.add("go")), delay);
