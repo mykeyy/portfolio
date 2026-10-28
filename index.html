@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>myky.cc</title>
+  <meta name="description" content="The birds are still sleeping. Mykey's portfolio is coming soon.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+  <script>
+    // Show the intro on the first visit in a browser session, or whenever the URL has ?intro.
+    try {
+      if (!sessionStorage.getItem("intro-seen") || /[?&]intro\b/.test(location.search)) {
+        document.documentElement.classList.add("play-intro");
+      }
+    } catch (e) {
+      document.documentElement.classList.add("play-intro");
+    }
+  </script>
+  <style>
+    :root {
+      --ink: #061ecf;
+      --paper: #ffffff;
+      --display: Anton, Impact, "Arial Narrow", sans-serif;
+      --mono: "Roboto Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+      /* Sizes follow both width and height, so short laptop screens (1366x768, 1280x720) fit without scrolling */
+      --size: clamp(2.2rem, min(3.8vw, 6.5vh), 4.4rem);
+      --pad: clamp(20px, min(4vw, 6vh), 80px);
+      --col: clamp(300px, 24vw, 460px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--ink);
+      color: var(--paper);
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--paper); color: var(--ink); }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: var(--pad) max(16px, var(--pad));
+      font-family: var(--display);
+    }
+
+    /* Headline across the top; status + countdown bottom-left, links bottom-right.
+       Built for 16:9 first: the layout fills wide screens instead of sitting in a narrow column. */
+    main {
+      position: relative;
+      z-index: 1;
+      min-height: calc(100dvh - 2 * var(--pad));
+      max-width: 1760px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, var(--col)) minmax(0, 1fr) auto;
+      grid-template-rows: 1fr auto;
+      grid-template-areas:
+        "quote quote quote"
+        "timer donut links";
+      gap: clamp(24px, 4vh, 48px) 32px;
+    }
+
+    .hero {
+      grid-area: quote;
+      align-self: start;
+      display: grid;
+      gap: clamp(12px, 2vw, 28px);
+    }
+
+    /* "Coming soon" line under the headline; it settles in after the words rise */
+    .sub {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(1rem, 1.6vw, 1.8rem);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    h1.split + .sub {
+      opacity: 0;
+      transform: translateY(0.4em);
+    }
+
+    h1.go + .sub {
+      opacity: 1;
+      transform: none;
+      transition: opacity 0.6s ease-out 0.45s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s;
+    }
+
+    /* The classic spinning ASCII donut, faint, in the open space between the countdown and the links.
+       It sizes itself to that space (container units), so it never runs into the text on any screen. */
+    .donut {
+      grid-area: donut;
+      container-type: size;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .donut pre {
+      font-family: var(--mono);
+      font-size: min(calc(100cqh / 24.5), calc(100cqw / 40), 18px);
+      line-height: 1.1;
+      color: var(--paper);
+      opacity: 0.32;
+    }
+
+    /* Below laptop width there is no open space for it */
+    @media (max-width: 1023px) {
+      .donut { display: none; }
+    }
+
+    /* Headline reveal: each word rises out of its own mask as the intro lifts.
+       The words are only wrapped by the script, so the headline shows as plain text if it fails. */
+    h1 .w {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: top;
+      padding-bottom: 0.08em;
+      margin-bottom: -0.08em;
+    }
+
+    h1 .w > span {
+      display: inline-block;
+      transform: translateY(105%);
+    }
+
+    h1.go .w > span {
+      transform: none;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: calc(var(--i) * 70ms);
+    }
+
+    h1 {
+      font-weight: 400;
+      text-transform: uppercase;
+      font-size: clamp(2.8rem, min(9vw, 16vh), 11rem);
+      line-height: 0.95;
+      letter-spacing: 0.01em;
+      max-width: 20ch;
+      text-wrap: balance;
+    }
+
+    /* Intro: "myky.cc" types itself out, then the cover lifts off the page.
+       The page underneath is always rendered, and the cover hides itself after 6s even if the script fails. */
+    .intro { display: none; }
+
+    html.play-intro .intro {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      clip-path: inset(0 0 0 0);
+      cursor: pointer;
+      animation: intro-failsafe 0.3s 6s forwards;
+    }
+
+    .intro.lift {
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path 0.55s cubic-bezier(0.7, 0, 0.84, 0);
+    }
+
+    .intro-word {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(3rem, 13vw, 9rem);
+      letter-spacing: -0.02em;
+      white-space: pre;
+    }
+
+    .intro-word::after {
+      content: "_";
+      animation: caret 0.9s steps(1) infinite;
+    }
+
+    @keyframes caret {
+      50% { opacity: 0; }
+    }
+
+    @keyframes intro-failsafe {
+      to { visibility: hidden; opacity: 0; }
+    }
+
+    /* Status card, countdown, and reminder stack in one column of the same width */
+    .countdown {
+      grid-area: timer;
+      align-self: end;
+      justify-self: start;
+      width: var(--col);
+      display: grid;
+      gap: 12px;
+    }
+
+    /* White block with blue digits, like a flip clock face */
+    .timer {
+      display: grid;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    .timer-label {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(0.7rem, 1vw, 0.95rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .units {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .unit {
+      display: grid;
+      justify-items: start;
+      gap: 8px;
+    }
+
+    .digits {
+      display: flex;
+    }
+
+    .unit small {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(0.65rem, 1.4vw, 0.8rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* One digit in a rolling column */
+    .digit {
+      position: relative;
+      width: 0.62em;
+      height: 1.2em;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: var(--size);
+      line-height: 1;
+    }
+
+    .digit span {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+      will-change: transform;
+    }
+
+    /* Reminder: same outline and hover bar as the links */
+    .remind {
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 2px solid var(--paper);
+      color: var(--paper);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .remind[hidden] { display: none; }
+
+    .remind:active { transform: translateY(1px); }
+
+    .remind svg {
+      width: 18px;
+      height: 18px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .debug {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      font: 12px system-ui, sans-serif;
+    }
+
+    .debug button,
+    .debug select {
+      font: inherit;
+      padding: 4px 8px;
+      border: 2px solid var(--paper);
+      background: var(--ink);
+      color: var(--paper);
+      cursor: pointer;
+    }
+
+    .presence {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      min-width: 0;
+      padding: 18px;
+      background: var(--paper);
+      color: var(--ink);
+      text-align: left;
+      font-family: var(--mono);
+    }
+
+    .presence[hidden] { display: none; }
+
+    .presence img {
+      width: 84px;
+      height: 84px;
+      flex: none;
+      border: 2px solid var(--ink);
+      filter: grayscale(100%);
+    }
+
+    .presence .meta {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    /* Long names, statuses, and track titles truncate with an ellipsis instead of growing the card */
+    .presence .name {
+      display: block;
+      font-weight: 700;
+      font-size: 1.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .presence .status {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+
+    .presence .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .presence .activity-row[hidden] { display: none; }
+
+    /* The note icon stays fixed while only the track title scrolls */
+    .presence .note {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Long track titles scroll sideways on one line, like an old MP3 player display */
+    .presence .activity {
+      display: block;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 0.95rem;
+    }
+
+    .presence .track {
+      display: inline-flex;
+    }
+
+    .presence .track span {
+      flex: none;
+      padding-right: 3em;
+    }
+
+    .presence .activity.scroll .track {
+      animation: ticker linear infinite;
+    }
+
+    @keyframes ticker {
+      to { transform: translateX(-50%); }
+    }
+
+    /* Social links: a white bar slides in behind the link on hover */
+    /* The links stretch to the same height as the status/countdown column beside them,
+       so the first link lines up with the card's top and the last with the button's bottom */
+    nav {
+      grid-area: links;
+      align-self: stretch;
+      justify-self: end;
+    }
+
+    .links {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 4px;
+      list-style: none;
+      text-align: right;
+    }
+
+    .links a {
+      position: relative;
+      isolation: isolate;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.15em 0.4em;
+      white-space: nowrap;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(1.4rem, 3.4vw, 3.2rem);
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--paper);
+      text-decoration: none;
+    }
+
+    .links a::before,
+    .remind::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: var(--paper);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    .links a:hover,
+    .links a:focus-visible,
+    .remind:hover,
+    .remind:focus-visible {
+      color: var(--ink);
+      outline: none;
+    }
+
+    .links a:hover::before,
+    .links a:focus-visible::before,
+    .remind:hover::before,
+    .remind:focus-visible::before {
+      transform: scaleX(1);
+    }
+
+    .links svg {
+      width: 0.9em;
+      height: 0.9em;
+      fill: currentColor;
+      flex: none;
+    }
+
+    /* Phone: one column, in reading order: headline, clock, status + countdown, links */
+    @media (max-width: 640px) {
+      main {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto;
+        grid-template-areas:
+          "quote"
+          "timer"
+          "links";
+        gap: 36px;
+      }
+      nav { align-self: start; }
+      .links { height: auto; }
+      .countdown { width: 100%; }
+      nav { justify-self: start; }
+      .links { align-items: flex-start; text-align: left; }
+      .links a { padding-left: 0; }
+    }
+
+    /* Phone: bigger headline, status card, countdown, and links so they read at arm's length */
+    @media (max-width: 640px) {
+      :root { --size: 2.6rem; }
+      h1 { font-size: 19vw; }
+      .sub { font-size: 1.1rem; }
+      .presence { padding: 18px; gap: 18px; }
+      .presence img { width: 84px; height: 84px; }
+      .presence .name { font-size: 1.3rem; }
+      .presence .status { font-size: 0.9rem; }
+      .presence .activity { font-size: 1rem; }
+      .presence .note { width: 20px; height: 20px; }
+      .links { gap: 10px; }
+      .links a { font-size: clamp(2.2rem, 11vw, 3rem); }
+      .remind { padding: 16px; font-size: 1rem; }
+    }
+
+    /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
+    @media (prefers-reduced-motion: reduce) {
+      .intro.lift { clip-path: inset(0 0 0 0); opacity: 0; transition: opacity 0.3s ease-out; }
+      .intro-word::after { animation: none; }
+      h1 .w > span { transform: none; opacity: 0; }
+      h1.go .w > span { opacity: 1; transition: opacity 0.4s ease-out; }
+      h1.split + .sub, h1.go + .sub { transform: none; }
+      .digit span { transition: none; }
+      .links a::before, .remind::before { transition: none; }
+      .presence .activity.scroll .track { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="intro" aria-hidden="true"><span class="intro-word">myky.cc</span></div>
+
+  <main>
+    <header class="hero">
+      <h1>The birds are still sleeping.</h1>
+      <p class="sub">Coming soon. My portfolio is on its way.</p>
+    </header>
+
+    <div class="donut" aria-hidden="true"><pre id="donut"></pre></div>
+
+    <div class="countdown">
+      <aside class="presence" id="presence" hidden>
+        <span id="presence-avatar"></span>
+        <div class="meta">
+          <span class="name" id="presence-name"></span>
+          <span class="status" id="presence-status"></span>
+          <span class="activity-row" id="presence-activity-row" hidden>
+            <svg class="note" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.49" cy="17" r="4"/><path d="M13.49 17V3c0 2.76 2.24 5 5 5"/></svg>
+            <span class="activity" id="presence-activity"><span class="track" id="presence-track"></span></span>
+          </span>
+        </div>
+      </aside>
+
+      <div class="timer" role="timer" aria-label="Time until my portfolio opens">
+        <p class="timer-label">My portfolio opens in</p>
+        <div class="units">
+          <div class="unit" data-unit="days"><div class="digits"></div><small>Days</small></div>
+          <div class="unit" data-unit="hours"><div class="digits"></div><small>Hrs</small></div>
+          <div class="unit" data-unit="minutes"><div class="digits"></div><small>Min</small></div>
+          <div class="unit" data-unit="seconds"><div class="digits"></div><small>Sec</small></div>
+        </div>
+      </div>
+
+      <!-- Opens Dec 8, 2026 00:00 PHT = Dec 7, 16:00 UTC -->
+      <a class="remind" id="remind" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=myky.cc%20opens&amp;dates=20261207T160000Z/20261207T163000Z&amp;details=The%20birds%20are%20awake.%20https%3A%2F%2Fmyky.cc&amp;location=https%3A%2F%2Fmyky.cc" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2v4M8 2v4"/><path d="M13 4h-2C7.23 4 5.34 4 4.17 5.17 3 6.34 3 8.23 3 12v2c0 3.77 0 5.66 1.17 6.83C5.34 22 7.23 22 11 22h2c3.77 0 5.66 0 6.83-1.17C21 19.66 21 17.77 21 14v-2c0-3.77 0-5.66-1.17-6.83C18.66 4 16.77 4 13 4Z"/><path d="M3 10h18"/></svg>
+        Add to Google Calendar
+      </a>
+    </div>
+
+    <nav>
+      <ul class="links">
+        <li><a href="https://x.com/mykeycc" target="_blank" rel="noopener" aria-label="X">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>
+        </a></li>
+        <li><a href="https://github.com/mykeyy" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://discord.com/users/730104482033303602" target="_blank" rel="noopener">Discord</a></li>
+        <!-- Opens a new email with the subject already filled in -->
+        <li><a href="mailto:hello@mykeyy.tech?subject=Hello%20from%20myky.cc" id="contact">Contact me</a></li>
+      </ul>
+    </nav>
+  </main>
+
+  <script>
+    const CALM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Split the headline into masked words so they can rise in one after another.
+    const headline = document.querySelector("h1");
+    const words = headline.textContent.trim().split(/\s+/);
+    headline.replaceChildren();
+    headline.classList.add("split");
+    words.forEach((text, i) => {
+      const mask = document.createElement("span");
+      mask.className = "w";
+      const word = document.createElement("span");
+      word.textContent = text;
+      word.style.setProperty("--i", i);
+      mask.appendChild(word);
+      headline.append(mask, " ");
+    });
+
+    function revealHeadline(delay = 0) {
+      setTimeout(() => requestAnimationFrame(() => headline.classList.add("go")), delay);
+    }
+
+    // Intro: "myky.cc" types itself out, then the cover lifts and the headline rises.
+    // Click or press any key to skip.
+    function playIntro() {
+      const cover = document.querySelector("div.intro");
+      if (!document.documentElement.classList.contains("play-intro")) {
+        cover.remove();
+        revealHeadline(100);
+        return;
+      }
+      try { sessionStorage.setItem("intro-seen", "1"); } catch (e) {}
+
+      const word = cover.querySelector(".intro-word");
+      const target = word.textContent;
+      let done = false;
+
+      const lift = () => {
+        if (done) return;
+        done = true;
+        word.textContent = target;
+        cover.classList.add("lift");
+        revealHeadline(150);
+        setTimeout(() => cover.remove(), 700);
+      };
+      cover.addEventListener("click", lift);
+      addEventListener("keydown", lift, { once: true });
+
+      if (CALM) {
+        setTimeout(lift, 700);
+        return;
+      }
+
+      word.textContent = "";
+      let typed = 0;
+      setTimeout(() => {
+        const typer = setInterval(() => {
+          if (done) return clearInterval(typer);
+          word.textContent = target.slice(0, ++typed);
+          if (typed === target.length) {
+            clearInterval(typer);
+            setTimeout(lift, 700);
+          }
+        }, 120);
+      }, 300);
+    }
+    playIntro();
+
+    // The spinning ASCII donut (after Andy Sloane's donut.c), drawn into an 80x22 character grid.
+    const donut = document.getElementById("donut");
+    function drawDonut(A, B) {
+      const W = 80, H = 22;
+      const out = new Array(W * H).fill(" ");
+      const depth = new Array(W * H).fill(0);
+      const cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+      for (let j = 0; j < 6.28; j += 0.07) {
+        const ct = Math.cos(j), st = Math.sin(j);
+        for (let i = 0; i < 6.28; i += 0.02) {
+          const sp = Math.sin(i), cp = Math.cos(i);
+          const h = ct + 2;
+          const D = 1 / (sp * h * sA + st * cA + 5);
+          const t = sp * h * cA - st * sA;
+          const x = Math.floor(40 + 30 * D * (cp * h * cB - t * sB));
+          const y = Math.floor(12 + 15 * D * (cp * h * sB + t * cB));
+          const o = x + W * y;
+          const N = Math.floor(8 * ((st * sA - sp * ct * cA) * cB - sp * ct * sA - st * cA - cp * ct * sB));
+          if (y >= 0 && y < H && x >= 0 && x < W && D > depth[o]) {
+            depth[o] = D;
+            out[o] = ".,-~:;=!*#$@"[N > 0 ? N : 0];
+          }
+        }
+      }
+      let text = "";
+      for (let y = 0; y < H; y++) text += out.slice(y * W, y * W + W).join("") + "\n";
+      donut.textContent = text;
+    }
+
+    let spinA = 1, spinB = 1;
+    drawDonut(spinA, spinB);
+    if (!CALM) {
+      // About 20 frames a second; skipped while the tab is hidden or below 1024px, where the donut is hidden.
+      const NARROW = matchMedia("(max-width: 1023px)");
+      setInterval(() => {
+        if (document.hidden || NARROW.matches) return;
+        spinA += 0.04;
+        spinB += 0.02;
+        drawDonut(spinA, spinB);
+      }, 50);
+    }
+
+    // The site opens 42 days after Oct 27, 2026 at 00:00 Philippine time (UTC+8).
+    const OPENS_AT = new Date("2026-12-08T00:00:00+08:00").getTime();
+
+    // Open the page with ?debug to get time-skip buttons for testing the countdown.
+    const DEBUG = new URLSearchParams(location.search).has("debug");
+    let debugOffset = 0;
+    // Build a rolling 0-9 column for one digit cell, like AnimatedCounter in the React version.
+    function createDigit(parent) {
+      const cell = document.createElement("div");
+      cell.className = "digit";
+      const spans = [];
+      for (let n = 0; n < 10; n++) {
+        const s = document.createElement("span");
+        s.textContent = n;
+        cell.appendChild(s);
+        spans.push(s);
+      }
+      cell._spans = spans;
+      cell._value = null;
+      parent.appendChild(cell);
+      return cell;
+    }
+
+    function setDigit(cell, value) {
+      if (cell._value === value) return;
+      cell._value = value;
+
+      cell._spans.forEach((s, n) => {
+        let offset = (10 + n - value) % 10;
+        if (offset > 5) offset -= 10;
+
+        // Digits wrap from 9 to 0 (and back). Snap across that wrap instead of
+        // animating the whole column past the visible window, which is the stutter.
+        if (s._offset === undefined || Math.abs(offset - s._offset) > 5) {
+          s.style.transition = "none";
+          s.style.transform = `translateY(${offset * 100}%)`;
+          void s.offsetHeight;
+          s.style.transition = "";
+        } else {
+          s.style.transform = `translateY(${offset * 100}%)`;
+        }
+        s._offset = offset;
+      });
+    }
+
+    const units = {};
+    document.querySelectorAll(".unit").forEach((el) => {
+      const digits = el.querySelector(".digits");
+      units[el.dataset.unit] = [createDigit(digits), createDigit(digits)];
+    });
+
+    function tick() {
+      const diff = Math.max(0, OPENS_AT - (Date.now() + debugOffset));
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      // Nothing left to remind anyone about once it opens.
+      document.getElementById("remind").hidden = diff === 0;
+      const parts = { days, hours, minutes, seconds };
+      for (const key in parts) {
+        const [tens, ones] = String(parts[key]).padStart(2, "0").split("").map(Number);
+        setDigit(units[key][0], tens);
+        setDigit(units[key][1], ones);
+      }
+    }
+
+    if (DEBUG) {
+      const panel = document.createElement("div");
+      panel.className = "debug";
+
+      const addButton = (label, onClick) => {
+        const button = document.createElement("button");
+        button.textContent = label;
+        button.addEventListener("click", onClick);
+        panel.appendChild(button);
+      };
+
+      const readout = document.createElement("span");
+      addButton("-1h", () => { debugOffset -= 3600000; tick(); });
+      addButton("+1h", () => { debugOffset += 3600000; tick(); });
+      addButton("+1d", () => { debugOffset += 86400000; tick(); });
+      addButton("reset", () => { debugOffset = 0; tick(); });
+      addButton("intro", () => { location.search = "?debug&intro"; });
+      // Font picker: swap the display font live to compare options.
+      const fonts = {
+        "Anton": "Anton, Impact, 'Arial Narrow', sans-serif",
+        "Dela Gothic One": "'Dela Gothic One', sans-serif",
+        "Archivo Black": "'Archivo Black', sans-serif",
+        "Bowlby One": "'Bowlby One', sans-serif",
+        "Big Shoulders Display": "'Big Shoulders Display', sans-serif",
+        "League Gothic": "'League Gothic', sans-serif",
+      };
+      const fontLink = document.createElement("link");
+      fontLink.rel = "stylesheet";
+      fontLink.href = "https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Archivo+Black&family=Bowlby+One&family=Big+Shoulders+Display:wght@900&family=League+Gothic&display=swap";
+      document.head.appendChild(fontLink);
+
+      const fontSelect = document.createElement("select");
+      for (const name in fonts) {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        fontSelect.appendChild(option);
+      }
+      fontSelect.addEventListener("change", () => {
+        document.documentElement.style.setProperty("--display", fonts[fontSelect.value]);
+      });
+      panel.appendChild(fontSelect);
+
+      panel.appendChild(readout);
+      document.body.appendChild(panel);
+
+      setInterval(() => {
+        readout.textContent = `skip ${debugOffset / 3600000}h`;
+      }, 500);
+    }
+
+    // Re-sync to each second boundary so the flip lands on the second.
+    function scheduleTick() {
+      tick();
+      setTimeout(scheduleTick, 1000 - (Date.now() % 1000) + 10);
+    }
+    scheduleTick();
+
+    // Lanyard shows your live Discord presence. Set your Discord user ID here
+    // (Discord: Settings > Advanced > Developer Mode, then right-click your name > Copy User ID),
+    // and join the Lanyard server (discord.gg/lanyard) so the API can read your status.
+    const DISCORD_ID = "730104482033303602";
+
+    // Show the activity line. If it is wider than the card, it scrolls sideways in a loop.
+    // The note icon only shows for music.
+    function setActivity(text, isMusic = true) {
+      const el = document.getElementById("presence-activity");
+      const track = document.getElementById("presence-track");
+      document.getElementById("presence-activity-row").hidden = !text;
+      document.querySelector(".presence .note").style.display = isMusic ? "" : "none";
+      track.replaceChildren();
+      el.classList.remove("scroll");
+      if (!text) return;
+
+      for (let i = 0; i < 2; i++) {
+        const copy = document.createElement("span");
+        copy.textContent = text;
+        track.appendChild(copy);
+      }
+
+      if (track.firstChild.offsetWidth > el.clientWidth) {
+        track.style.animationDuration = `${Math.max(8, text.length * 0.2)}s`;
+        el.classList.add("scroll");
+      }
+    }
+
+    async function loadPresence() {
+      if (!DISCORD_ID) return;
+      try {
+        const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+        const { data } = await res.json();
+        const user = data.discord_user;
+
+        // Only create the image when there is an avatar, so no empty <img> is ever rendered.
+        const slot = document.getElementById("presence-avatar");
+        slot.replaceChildren();
+        if (user.avatar) {
+          const img = document.createElement("img");
+          img.alt = "";
+          img.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
+          slot.appendChild(img);
+        }
+
+        document.getElementById("presence-name").textContent = user.global_name || user.username;
+        const STATUS = { online: "Online", idle: "Idle", dnd: "Do not disturb", offline: "Offline" };
+        document.getElementById("presence-status").textContent = STATUS[data.discord_status] || data.discord_status;
+
+        // Music first, then a game, then the custom status message.
+        const activities = data.activities || [];
+        const playing = activities.find((a) => a.type === 0);
+        const custom = activities.find((a) => a.type === 4 && a.state);
+        let activity = "";
+        let isMusic = false;
+        if (data.listening_to_spotify && data.spotify) {
+          activity = `${data.spotify.song} — ${data.spotify.artist}`;
+          isMusic = true;
+        } else if (playing) {
+          activity = `Playing ${playing.name}`;
+        } else if (custom) {
+          activity = custom.state;
+        }
+        document.getElementById("presence").hidden = false;
+        setActivity(activity, isMusic);
+      } catch (err) {
+        // Keep the card hidden if the API is unreachable.
+      }
+    }
+
+    loadPresence();
+    setInterval(loadPresence, 30000);
+  </script>
+</body>
+</html>

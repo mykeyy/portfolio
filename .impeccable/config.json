@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "radial-halo",
+        "value": "*",
+        "files": [
+          "C:\\Users\\kalas\\projects\\mykey\\index.html"
+        ],
+        "createdAt": "2026-10-27T23:55:14.694Z",
+        "reason": "user confirmed keeping the gradient halo background"
+      },
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "C:\\Users\\kalas\\projects\\mykey\\index.html"
+        ],
+        "createdAt": "2026-10-28T00:19:31.223Z",
+        "reason": "user requested the MP3-style scrolling track title"
+      }
+    ]
+  }
+}
