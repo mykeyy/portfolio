@@ -48,6 +48,8 @@
       --size: clamp(2.2rem, min(3.8vw, 6.5vh), 4.4rem);
       --pad: clamp(20px, min(4vw, 6vh), 80px);
       --col: clamp(300px, 24vw, 460px);
+      /* The link hover wipe: one duration and easing shared by the white bar and the blue text */
+      --wipe: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -508,15 +510,41 @@
       background: var(--paper);
       transform: scaleX(0);
       transform-origin: right;
-      transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+      transition: transform var(--wipe);
     }
 
+    /* The label is drawn twice (the script adds the copy): white underneath, blue on top. The blue copy is
+       clipped to the same region the white bar covers, and it uses the same duration and easing, so the
+       text turns blue exactly where the bar passes under it, as one motion. */
     .links a:hover,
     .links a:focus-visible,
     .remind:hover,
     .remind:focus-visible {
-      color: var(--ink);
       outline: none;
+    }
+
+    html:not(.fx) .links a:hover,
+    html:not(.fx) .links a:focus-visible,
+    html:not(.fx) .remind:hover,
+    html:not(.fx) .remind:focus-visible {
+      color: var(--ink);
+    }
+
+    .lbl {
+      display: inline-flex;
+      align-items: center;
+      justify-content: inherit;
+      gap: inherit;
+    }
+
+    .lbl.ink {
+      position: absolute;
+      inset: 0;
+      padding: inherit;
+      color: var(--ink);
+      pointer-events: none;
+      clip-path: inset(0 0 0 100%);
+      transition: clip-path var(--wipe);
     }
 
     .links a:hover::before,
@@ -524,6 +552,13 @@
     .remind:hover::before,
     .remind:focus-visible::before {
       transform: scaleX(1);
+    }
+
+    .links a:hover .lbl.ink,
+    .links a:focus-visible .lbl.ink,
+    .remind:hover .lbl.ink,
+    .remind:focus-visible .lbl.ink {
+      clip-path: inset(0 0 0 0);
     }
 
     /* HugeIcons, drawn in one stroke style like the note and calendar icons */
@@ -544,8 +579,13 @@
       transform: scaleX(1);
     }
 
-    .links a:active,
-    .remind:active {
+    .links a:active .lbl.ink,
+    .remind:active .lbl.ink {
+      clip-path: inset(0 0 0 0);
+    }
+
+    html:not(.fx) .links a:active,
+    html:not(.fx) .remind:active {
       color: var(--ink);
     }
 
@@ -628,7 +668,7 @@
       h1.go .w > span { opacity: 1; transition: opacity 0.4s ease-out; }
       h1.split + .sub, h1.go + .sub { transform: none; }
       .digit span { transition: none; }
-      .links a::before, .remind::before { transition: none; }
+      .links a::before, .remind::before, .lbl.ink { transition: none; }
       .presence .activity.scroll .track { animation: none; }
     }
   </style>
@@ -699,6 +739,20 @@
   </main>
 
   <script>
+    // Link hover wipe: give each link a second, blue copy of its label that the CSS reveals in step with
+    // the white bar. The "fx" class switches the plain colour-change fallback off, so the links still
+    // work if this script never runs.
+    document.querySelectorAll(".links a, .remind").forEach((link) => {
+      const label = document.createElement("span");
+      label.className = "lbl";
+      label.append(...link.childNodes);
+      const ink = label.cloneNode(true);
+      ink.classList.add("ink");
+      ink.setAttribute("aria-hidden", "true");
+      link.append(label, ink);
+    });
+    document.documentElement.classList.add("fx");
+
     const CALM = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Split the headline into masked words so they can rise in one after another.
