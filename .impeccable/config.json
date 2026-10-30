@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-10-28T01:23:28.419Z",
         "reason": "false positive: .timer has 12-16px padding on all sides (scaled by --u on compact screens); the static scan misreads the rolling digit columns"
+      },
+      {
+        "rule": "marquee",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-30T23:49:03.182Z",
+        "reason": "Deliberate design, documented in README (Discord status: long titles scroll like an MP3 player). Motion only runs when a live now-playing title overflows the card, and it is disabled under prefers-reduced-motion (index.html .presence .activity.scroll rule). Not a decorative marquee; attribution to the original author, not this session."
       }
     ]
   }

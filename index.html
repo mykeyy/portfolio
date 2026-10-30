@@ -653,6 +653,69 @@
       .links svg { width: 1.2em; height: 1.2em; }
     }
 
+    /* Visitor count: an eye and the total, pinned to the top right. Hover, focus, or tap shows what it means. */
+    .visitors {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      z-index: 2;
+    }
+
+    .visitors-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 6px 12px;
+      border: 2px solid var(--paper);
+      background: transparent;
+      color: var(--paper);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    .visitors-btn svg {
+      width: 18px;
+      height: 18px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .visitors-btn:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+
+    .visitors-note {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: max-content;
+      max-width: min(260px, 80vw);
+      padding: 10px 12px;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.4;
+      letter-spacing: 0.02em;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+
+    .visitors:hover .visitors-note,
+    .visitors-btn:focus-visible + .visitors-note,
+    .visitors.open .visitors-note {
+      opacity: 1;
+      visibility: visible;
+    }
+
     /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
     @media (prefers-reduced-motion: reduce) {
       .intro.lift { clip-path: inset(0 0 0 0); opacity: 0; transition: opacity 0.3s ease-out; }
@@ -668,6 +731,15 @@
 </head>
 <body>
   <div class="intro" aria-hidden="true"><span class="intro-word">myky.cc</span></div>
+
+  <!-- Unique visitors: an eye, the total, and a note on hover, focus, or tap -->
+  <div class="visitors">
+    <button type="button" class="visitors-btn" id="visitors" aria-describedby="visitors-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span id="visitors-count">—</span>
+    </button>
+    <span class="visitors-note" id="visitors-note" role="tooltip">Unique visitors to myky.cc. Each browser counts once.</span>
+  </div>
 
   <main>
     <div class="top">
@@ -1024,6 +1096,37 @@
 
     loadPresence();
     setInterval(loadPresence, 30000);
+  </script>
+  <script>
+    // Unique visitors: a browser counts once. Its first visit adds one to the total and shows the new count;
+    // later visits only read it. If the counter can't be reached, the eye shows a dash and the page works as before.
+    (() => {
+      const badge = document.querySelector(".visitors");
+      const countEl = document.getElementById("visitors-count");
+      let counted = false;
+      try { counted = localStorage.getItem("visitor-counted") === "1"; } catch (err) {}
+
+      fetch("/api/visit", { method: counted ? "GET" : "POST", cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) throw new Error(res.status);
+          return res.json();
+        })
+        .then(({ count }) => {
+          countEl.textContent = Number(count).toLocaleString("en-US");
+          if (!counted) {
+            try { localStorage.setItem("visitor-counted", "1"); } catch (err) {}
+          }
+        })
+        .catch(() => {
+          // Leave the dash in place.
+        });
+
+      // Touch screens have no hover, so a tap toggles the note. Tapping elsewhere closes it.
+      document.getElementById("visitors").addEventListener("click", () => badge.classList.toggle("open"));
+      document.addEventListener("click", (e) => {
+        if (!badge.contains(e.target)) badge.classList.remove("open");
+      });
+    })();
   </script>
 </body>
 </html>
