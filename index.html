@@ -292,6 +292,35 @@
       text-transform: uppercase;
     }
 
+    /* Label on the left, visitor count on the right, in the same header row: no extra card, no extra height */
+    .timer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .visitors {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: max(0.65rem, calc(var(--size) * 0.22));
+      letter-spacing: 0.12em;
+    }
+
+    .visitors svg {
+      width: 1.3em;
+      height: 1.3em;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .units {
       display: flex;
       justify-content: space-between;
@@ -616,11 +645,10 @@
         min-height: calc(100vh - 2 * var(--pad));
         min-height: calc(100svh - 2 * var(--pad));
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr) auto auto auto;
+        grid-template-rows: minmax(0, 1fr) auto auto;
         grid-template-areas:
           "top"
           "timer"
-          "visits"
           "links";
         gap: 16px;
       }
@@ -672,107 +700,6 @@
       .links svg { width: 1.2em; height: 1.2em; }
     }
 
-    /* Visitor count: an eye and the total, pinned to the top right. Hover, focus, or tap shows what it means. */
-    .visitors {
-      position: fixed;
-      top: max(12px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
-      z-index: 2;
-    }
-
-    .visitors-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 36px;
-      padding: 6px 12px;
-      border: 2px solid var(--paper);
-      background: transparent;
-      color: var(--paper);
-      font-family: var(--mono);
-      font-weight: 700;
-      font-size: 0.85rem;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-    }
-
-    .visitors-btn svg {
-      width: 18px;
-      height: 18px;
-      flex: none;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .visitors-btn:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
-
-    .visitors-note {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: max-content;
-      max-width: min(260px, 80vw);
-      padding: 10px 12px;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: var(--mono);
-      font-size: 0.8rem;
-      line-height: 1.4;
-      letter-spacing: 0.02em;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.2s ease, visibility 0.2s;
-    }
-
-    .visitors:hover .visitors-note,
-    .visitors-btn:focus-visible + .visitors-note,
-    .visitors.open .visitors-note {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    /* On phones the counter sits in the stack under the countdown, as wide as the cards, in the same white-and-blue
-       treatment as the Discord card. Its explanation is always shown, since there is no hover on a phone. */
-    @media (max-width: 1023px) {
-      .visitors {
-        position: static;
-        grid-area: visits;
-        display: grid;
-        gap: 6px;
-        justify-items: stretch;
-      }
-
-      .visitors-btn {
-        justify-content: center;
-        min-height: calc(var(--u) * 3.2);
-        padding: 0 12px;
-        border: 0;
-        background: var(--paper);
-        color: var(--ink);
-        font-size: calc(var(--u) * 1.1);
-        letter-spacing: 0.06em;
-      }
-
-      .visitors-btn svg { width: 1.2em; height: 1.2em; }
-
-      .visitors-note {
-        position: static;
-        width: 100%;
-        max-width: none;
-        padding: 0;
-        background: none;
-        color: var(--paper);
-        text-align: center;
-        font-size: calc(var(--u) * 0.85);
-        opacity: 1;
-        visibility: visible;
-      }
-    }
-
     /* Reduced motion: no typing, wipe, or rising words; things fade instead. The donut holds still. */
     @media (prefers-reduced-motion: reduce) {
       .intro.lift { clip-path: inset(0 0 0 0); opacity: 0; transition: opacity 0.3s ease-out; }
@@ -813,7 +740,14 @@
       </aside>
 
       <div class="timer" role="timer" aria-label="Time until my portfolio opens">
-        <p class="timer-label">Portfolio opens in</p>
+        <div class="timer-head">
+          <p class="timer-label">Portfolio opens in</p>
+          <!-- Unique visitors: each browser counts once -->
+          <span class="visitors" id="visitors" role="status" aria-label="Unique visitors" title="Unique visitors to myky.cc. Each browser counts once.">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="visitors-count">—</span>
+          </span>
+        </div>
         <div class="units">
           <div class="unit" data-unit="days"><div class="digits"></div><small>Days</small></div>
           <div class="unit" data-unit="hours"><div class="digits"></div><small>Hrs</small></div>
@@ -827,15 +761,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2v4M8 2v4"/><path d="M13 4h-2C7.23 4 5.34 4 4.17 5.17 3 6.34 3 8.23 3 12v2c0 3.77 0 5.66 1.17 6.83C5.34 22 7.23 22 11 22h2c3.77 0 5.66 0 6.83-1.17C21 19.66 21 17.77 21 14v-2c0-3.77 0-5.66-1.17-6.83C18.66 4 16.77 4 13 4Z"/><path d="M3 10h18"/></svg>
         Add to Google Calendar
       </a>
-    </div>
 
-    <!-- Unique visitors: an eye and the total. Pinned top right on desktop; a card under the countdown on phones -->
-    <div class="visitors">
-      <button type="button" class="visitors-btn" id="visitors" aria-describedby="visitors-note">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span id="visitors-count">—</span>
-      </button>
-      <span class="visitors-note" id="visitors-note" role="tooltip">Unique visitors to myky.cc. Each browser counts once.</span>
     </div>
 
     <nav>
@@ -1158,7 +1084,6 @@
     // Unique visitors: a browser counts once. Its first visit adds one to the total and shows the new count;
     // later visits only read it. If the counter can't be reached, the eye shows a dash and the page works as before.
     (() => {
-      const badge = document.querySelector(".visitors");
       const countEl = document.getElementById("visitors-count");
       let counted = false;
       try { counted = localStorage.getItem("visitor-counted") === "1"; } catch (err) {}
@@ -1177,12 +1102,6 @@
         .catch(() => {
           // Leave the dash in place.
         });
-
-      // Touch screens have no hover, so a tap toggles the note. Tapping elsewhere closes it.
-      document.getElementById("visitors").addEventListener("click", () => badge.classList.toggle("open"));
-      document.addEventListener("click", (e) => {
-        if (!badge.contains(e.target)) badge.classList.remove("open");
-      });
     })();
   </script>
 </body>

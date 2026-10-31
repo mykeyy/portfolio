@@ -43,6 +43,8 @@ Read this before touching `index.html`. It records what he wants, what he sent b
 - Links: X is its logo only; GitHub, Discord, and Contact me show a logo plus the word. Contact me opens `mailto:hello@mykeyy.tech?subject=Hello%20from%20myky.cc`. Links: x.com/mykeycc, github.com/mykeyy, discord.com/users/730104482033303602.
 - Donut: classic donut.c in a 80x22 character grid, redrawn about 20 times a second, paused when the tab is hidden or below 1024px. Opacity 0.55 on the page.
 - Link preview: `og.png` (1200x675) plus Open Graph and X tags in `<head>`; `theme-color` `#061ecf` gives Discord's blue embed edge. The image is the name beside a face-on ASCII donut, rendered from `assets/og.html`.
+- Visitor count: an eye icon and the number, right-aligned in the countdown card's header row (same row as "Portfolio opens in"), blue on white. Data comes from `/api/visit` (Cloudflare Pages Function + D1, `DB` binding); each browser counts once via localStorage. He rejected a fixed top-right badge and an always-visible explanation line as "out of place" and "ugly": everything must sit inside the grid, and a new element should add no height. The explanation lives only in the `title` attribute.
+- Fonts are self-hosted in `fonts/` (Latin woff2, preloaded); there is no Google Fonts link.
 - README: centered, screenshots in `assets/`, honest "about" (only facts he has given).
 
 ## Motion
