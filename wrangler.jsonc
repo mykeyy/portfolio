@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "myky",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"compatibility_date": "2026-10-23",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	// Unique-visitor counter (src/pages/api/visit.ts). Table: schema.sql.
+	// Before the first deploy, add "database_id" with the ID of the D1 database the coming-soon page uses,
+	// so the count carries over. Without it, the first deploy creates a new, empty database.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "myky"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
+}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Name as the frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1440px; height: 900px; overflow: hidden; background: #061ecf; color: #fff; }
+  body { font-family: "Roboto Mono", monospace; font-weight: 700; }
+  .page { height: 900px; padding: 40px 56px 44px; display: grid; grid-template-rows: auto 1fr auto; gap: 28px; }
+  .big { font-family: Anton, sans-serif; font-weight: 400; text-transform: uppercase; line-height: 0.8; white-space: nowrap; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .top .big { font-size: 300px; }
+  .side { display: flex; flex-direction: column; align-items: flex-end; gap: 22px; padding-top: 8px; text-align: right; }
+  .side nav { display: flex; gap: 6px; }
+  .side nav a { color: #fff; text-decoration: none; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 10px; }
+  .side nav a.on { background: #fff; color: #061ecf; }
+  .side p { font-size: 22px; line-height: 1.35; max-width: 15em; }
+  .band { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; min-height: 0; }
+  .list h2 { font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; display: flex; justify-content: space-between; padding-bottom: 8px; }
+  .list ol { list-style: none; border-top: 2px solid #fff; }
+  .list li { display: grid; grid-template-columns: 3.2em 1fr auto; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 2px solid #fff; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .list li.hot { background: #fff; color: #061ecf; margin: 0 -10px; padding: 9px 10px; }
+  .list li span:last-child { opacity: 1; }
+  .bottom { display: flex; align-items: flex-end; }
+  .bottom .big { font-size: 306px; width: 100%; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <h1 class="big">Mykey</h1>
+      <div class="side">
+        <nav>
+          <a class="on" href="#">Index</a>
+          <a href="#">Projects</a>
+          <a href="#">Writing</a>
+          <a href="#">About</a>
+          <a href="#">Contact</a>
+        </nav>
+        <p>Independent developer and designer in the Philippines.</p>
+      </div>
+    </div>
+
+    <div class="band">
+      <section class="list">
+        <h2><span>Projects</span><span>03</span></h2>
+        <ol>
+          <li class="hot"><span>01</span><span>myky.cc coming soon</span><span>2026</span></li>
+          <li><span>02</span><span>Project two</span><span>2026</span></li>
+          <li><span>03</span><span>Project three</span><span>2025</span></li>
+        </ol>
+      </section>
+      <section class="list">
+        <h2><span>Writing</span><span>04</span></h2>
+        <ol>
+          <li><span>R</span><span>Research piece one</span><span>Nov 26</span></li>
+          <li><span>N</span><span>A short note</span><span>Oct 26</span></li>
+          <li><span>N</span><span>Another note</span><span>Oct 26</span></li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="bottom">
+      <p class="big" aria-hidden="true">Nishikawa</p>
+    </div>
+  </div>
+</body>
+</html>

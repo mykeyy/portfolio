@@ -1,0 +1,104 @@
+---
+import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
+import PageHead from "../components/PageHead.astro";
+import Base from "../layouts/Base.astro";
+import { pad } from "../lib/entries";
+
+// Newest first, numbered in the order they were made (01 is the oldest)
+const designs = (await getCollection("designs", ({ data }) => import.meta.env.DEV || !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+---
+
+<Base title="Design" description="Interface and visual design by Mykey Nishikawa.">
+  <PageHead title="Design" note={`${pad(designs.length)} ${designs.length === 1 ? "piece" : "pieces"}`} />
+
+  <div class="wrap">
+    {
+      designs.length === 0 ? (
+        <p class="empty caps">Nothing here yet.</p>
+      ) : (
+        <ol class="pieces">
+          {designs.map((d, i) => (
+            <li>
+              <figure>
+                <Image
+                  src={d.data.image}
+                  alt={d.data.alt}
+                  widths={[640, 1024, 1600, 2400]}
+                  sizes="(min-width: 1760px) 1632px, calc(100vw - 2 * clamp(16px, 4vw, 64px))"
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
+                <figcaption>
+                  <span class="no caps">{pad(designs.length - i)}</span>
+                  <span class="year caps">{d.data.date.getFullYear()}</span>
+                  <span class="tools caps">{d.data.tools.join(", ")}</span>
+                  <span class="title">{d.data.title}</span>
+                  <span class="sum">{d.data.summary}</span>
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .pieces {
+    list-style: none;
+    display: grid;
+    gap: var(--block);
+  }
+
+  /* Each piece is shown as large as the column allows, framed by the 2px rule so a blue design on the blue page
+     reads as a picture of the work */
+  img {
+    width: 100%;
+    height: auto;
+    border: var(--rule);
+  }
+
+  /* The caption follows the ledger's columns: number, year, tools, then the title on --lead */
+  figcaption {
+    display: grid;
+    grid-template-columns: var(--col-no) var(--col-year) var(--col-kind) minmax(0, 1fr);
+    grid-template-areas: "no year tools title" ". . . sum";
+    column-gap: var(--col-gap);
+    row-gap: 8px;
+    align-items: baseline;
+    padding-top: clamp(14px, 1.6vw, 22px);
+  }
+
+  .no { grid-area: no; font-variant-numeric: tabular-nums; }
+  .year { grid-area: year; font-variant-numeric: tabular-nums; }
+  .tools { grid-area: tools; }
+
+  .title {
+    grid-area: title;
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: clamp(1.75rem, 0.9rem + 2.7vw, 3.75rem);
+    line-height: 0.95;
+  }
+
+  .sum {
+    grid-area: sum;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(0.9375rem, 0.88rem + 0.2vw, 1.0625rem);
+    line-height: 1.45;
+    max-width: 60ch;
+  }
+
+  .empty { padding: 22px 0; border-top: var(--rule); border-bottom: var(--rule); }
+
+  @media (max-width: 759px) {
+    figcaption {
+      grid-template-columns: auto auto minmax(0, 1fr);
+      grid-template-areas: "no year tools" "title title title" "sum sum sum";
+    }
+  }
+</style>

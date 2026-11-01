@@ -1,0 +1,56 @@
+---
+// The top of a section page: the section's name in Anton, as large as the width allows, with a short mono note.
+// `rgb` sets the name in a red-green-blue gradient with a matching band under it (Projects only).
+interface Props {
+  title: string;
+  note?: string;
+  rgb?: boolean;
+}
+
+const { title, note, rgb = false } = Astro.props;
+---
+
+<header class:list={["page-head wrap", { rgb }]}>
+  <div class="row">
+    <h1 class="display">{title}</h1>
+    {note && <p class="note caps">{note}</p>}
+  </div>
+  {rgb && <div class="band" aria-hidden="true" />}
+</header>
+
+<style>
+  .page-head {
+    padding-top: clamp(40px, 9vw, 150px);
+    margin-bottom: clamp(28px, 4vw, 56px);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 32px;
+  }
+
+  h1 {
+    font-size: clamp(4.5rem, 1.5rem + 11vw, 14rem);
+    line-height: 0.84;
+  }
+
+  .note { padding-bottom: 0.4em; }
+
+  /* Projects: the owner asked for the word itself in RGB, so the color lives in the letters */
+  .rgb h1 {
+    background: var(--rgb);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-bottom: 0.04em;
+  }
+
+  .band {
+    height: clamp(6px, 0.7vw, 12px);
+    margin-top: clamp(14px, 1.6vw, 24px);
+    background: var(--rgb);
+  }
+</style>

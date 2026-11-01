@@ -1,0 +1,64 @@
+---
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+
+const [first, ...rest] = site.name.split(" ");
+---
+
+<Base cover>
+  <section class="intro wrap">
+    <h1 class="name display">{first}<br class="c" /> {rest.join(" ")}</h1>
+    <p class="line caps">
+      <span>Independent developer and designer</span>
+      <span>Philippines, UTC+8</span>
+    </p>
+  </section>
+</Base>
+
+<style>
+  /* One screen, nothing to scroll: the name sits at the bottom, the menu button alone at the top */
+  :global(body.cover) {
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  :global(body.cover main) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .intro {
+    padding-bottom: clamp(28px, 6vh, 88px);
+    container-type: inline-size;
+  }
+
+  /* The name's ink spans the column exactly, edge to edge. Measured in Anton with canvas measureText:
+     --fit is the widest line's ink width in em (6.764 for MYKEY NISHIKAWA, 4.007 for NISHIKAWA), and every line
+     starts with 0.031em of side bearing before the ink, which the negative margin pulls back to the column edge.
+     One line on wide screens; on narrow ones it breaks after the first name and NISHIKAWA sets the width. */
+  .name {
+    --fit: 6.764;
+    font-size: calc(100cqw / var(--fit));
+    line-height: 0.84;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    margin-left: -0.03125em;
+  }
+
+  .name .c { display: none; }
+
+  @container (max-width: 520px) {
+    .name { --fit: 4.007; line-height: 0.92; }
+    .name .c { display: inline; }
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 24px;
+    margin-top: clamp(14px, 1.6vw, 24px);
+  }
+</style>

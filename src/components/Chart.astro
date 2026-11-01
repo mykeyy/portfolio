@@ -1,0 +1,583 @@
+---
+// A chart drawn at build time. The marks are SVG and the labels are HTML, so text stays readable at any width.
+// In .mdx writing use it with no import:
+//   <Chart kind="line" title="..." unit="%" series={[{ name: "A", data: [[2020, 3], [2021, 5]] }]} />
+//   <Chart kind="bar" title="..." unit=" KB" bars={[{ label: "HTML", value: 40.8 }]} />
+// The site has two colors, so up to three line series are told apart by line style (solid, dashed, dotted),
+// named in a legend and at the line ends. Every chart keeps its numbers in a table under "Show the data".
+import Icon from "./Icon.astro";
+
+type X = number | string;
+interface Series {
+  name: string;
+  data: [X, number][];
+}
+interface Bar {
+  label: string;
+  value: number;
+}
+
+interface Props {
+  kind: "line" | "bar";
+  title: string;
+  /** Where the numbers come from */
+  source?: string;
+  /** Marks the numbers as made up, for drafts and examples */
+  sample?: boolean;
+  /** Appended to every value, e.g. "%" or " KB" */
+  unit?: string;
+  /** What the x values are, e.g. "Year". Used in the data table. */
+  xLabel?: string;
+  series?: Series[];
+  bars?: Bar[];
+  min?: number;
+  max?: number;
+}
+
+const { kind, title, source, sample = false, unit = "", xLabel = "", series = [], bars = [], min, max } = Astro.props;
+
+if (kind === "line" && (series.length < 1 || series.length > 3)) {
+  throw new Error(`<Chart> "${title}": a line chart takes 1 to 3 series. Split more into separate charts.`);
+}
+if (kind === "bar" && bars.length < 1) throw new Error(`<Chart> "${title}": a bar chart needs at least one bar.`);
+if (bars.some((b) => b.value < 0)) throw new Error(`<Chart> "${title}": bars start at zero, so values can't be negative.`);
+
+const DASH = ["", "8 6", "0.5 6"];
+
+const trim = (n: number) => String(Number(n.toFixed(2)));
+const compact = (v: number) => {
+  const a = Math.abs(v);
+  if (a >= 1e6) return trim(v / 1e6) + "M" + unit;
+  if (a >= 1e3) return trim(v / 1e3) + "K" + unit;
+  return trim(v) + unit;
+};
+const full = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 2 }) + unit;
+
+// Round tick values: 0, 5, 10... or 0, 250, 500...
+function niceTicks(lo: number, hi: number, target = 5) {
+  if (lo === hi) hi = lo + 1;
+  const raw = (hi - lo) / target;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = ([1, 2, 2.5, 5, 10].find((m) => m * mag >= raw) ?? 10) * mag;
+  const start = Math.floor(lo / step + 1e-9) * step;
+  const end = Math.ceil(hi / step - 1e-9) * step;
+  const out: number[] = [];
+  for (let t = start; t <= end + step / 1e6; t += step) out.push(Number(t.toFixed(10)));
+  return out;
+}
+
+// ---- Line
+const xs: X[] = [];
+for (const s of series) for (const [x] of s.data) if (!xs.includes(x)) xs.push(x);
+const numericX = xs.length > 0 && xs.every((x) => typeof x === "number");
+if (numericX) (xs as number[]).sort((a, b) => a - b);
+const xFirst = Number(xs[0]);
+const xSpan = Number(xs.at(-1)) - xFirst || 1;
+const xPos = (x: X) =>
+  numericX ? (Number(x) - xFirst) / xSpan : xs.length === 1 ? 0.5 : xs.indexOf(x) / (xs.length - 1);
+
+const values = series.flatMap((s) => s.data.map(([, v]) => v));
+const yTicks = kind === "line" ? niceTicks(min ?? Math.min(0, ...values), max ?? Math.max(...values)) : [];
+const y0 = yTicks[0] ?? 0;
+const ySpan = (yTicks.at(-1) ?? 1) - y0 || 1;
+const yPos = (v: number) => (v - y0) / ySpan; // 0 at the bottom, 1 at the top
+
+const lines = series.map((s, i) => {
+  const points = [...s.data].sort((a, b) => xPos(a[0]) - xPos(b[0]));
+  const last = points.at(-1)!;
+  return {
+    name: s.name,
+    dash: DASH[i],
+    d: points.map(([x, v], j) => `${j ? "L" : "M"}${(xPos(x) * 1000).toFixed(1)},${((1 - yPos(v)) * 1000).toFixed(1)}`).join(""),
+    end: { top: (1 - yPos(last[1])) * 100, label: series.length > 1 ? `${s.name} ${full(last[1])}` : full(last[1]) },
+  };
+});
+
+// End labels only where they don't collide; otherwise the legend and the hover readout carry the names.
+const endTops = lines.map((l) => l.end.top).sort((a, b) => a - b);
+const endLabels = endTops.every((t, i) => i === 0 || t - endTops[i - 1] >= 9);
+
+const xStep = Math.ceil(xs.length / 6);
+const xTicks = xs.filter((_, i) => i % xStep === 0);
+
+const hover = {
+  x: xs.map(String),
+  pos: xs.map((x) => xPos(x) * 100),
+  series: series.map((s, i) => ({
+    name: s.name,
+    dash: DASH[i],
+    values: xs.map((x) => {
+      const p = s.data.find(([px]) => px === x);
+      return p ? { label: full(p[1]), top: (1 - yPos(p[1])) * 100 } : null;
+    }),
+  })),
+};
+
+const yLabelCh = Math.max(...yTicks.map((t) => compact(t).length), 1);
+const endLabelCh = endLabels ? Math.max(...lines.map((l) => l.end.label.length), 1) : 0;
+
+// ---- Bar
+const barMax = Math.max(...bars.map((b) => b.value), 0) || 1;
+const barLabelCh = Math.max(...bars.map((b) => b.label.length), 1);
+const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
+---
+
+<figure class="chart">
+  <figcaption class="name caps">{title}</figcaption>
+
+  {
+    kind === "line" && series.length > 1 && (
+      <ul class="legend caps" aria-label="Legend">
+        {lines.map((l) => (
+          <li>
+            <svg class="key" viewBox="0 0 28 8" aria-hidden="true">
+              <line x1="2" y1="4" x2="26" y2="4" stroke-dasharray={l.dash || undefined} />
+            </svg>
+            {l.name}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    kind === "line" && (
+      <div class="plot line" style={`--ylab: ${yLabelCh}ch; --endlab: calc(${endLabelCh}ch + ${endLabelCh * 0.04}em)`}>
+        <div class="y" aria-hidden="true">
+          {yTicks.map((t) => (
+            <span style={`bottom: ${yPos(t) * 100}%`}>{compact(t)}</span>
+          ))}
+        </div>
+
+        <div
+          class="area"
+          tabindex="0"
+          role="img"
+          aria-label={`${title}. Use the left and right arrow keys to read each value, or open the data table below.`}
+          data-hover={JSON.stringify(hover)}
+        >
+          <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+            {yTicks.map((t) => (
+              <line class:list={["grid", { base: t === 0 }]} x1="0" x2="1000" y1={(1 - yPos(t)) * 1000} y2={(1 - yPos(t)) * 1000} />
+            ))}
+            {lines.map((l) => (
+              <path class="mark" d={l.d} stroke-dasharray={l.dash || undefined} />
+            ))}
+          </svg>
+          {lines.map((l) => (
+            <span class="dot" style={`left: 100%; top: ${l.end.top}%`} />
+          ))}
+          <div class="cross" hidden>
+            <div class="tip" />
+          </div>
+          {lines.map(() => (
+            <span class="dot live" hidden />
+          ))}
+        </div>
+
+        <div class="ends caps" aria-hidden="true">
+          {endLabels && lines.map((l) => <span style={`top: ${l.end.top}%`}>{l.end.label}</span>)}
+        </div>
+
+        <div class="x" aria-hidden="true">
+          {xTicks.map((x) => (
+            <span style={`left: ${xPos(x) * 100}%`}>{x}</span>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    kind === "bar" && (
+      <div class="plot bars" style={`--blab: ${barLabelCh}ch; --bval: ${barValueCh + 1}ch`}>
+        {bars.map((b) => (
+          <div class="bar-row">
+            <span class="bar-label">{b.label}</span>
+            <span class="track">
+              <span class="bar" style={`--f: ${b.value / barMax}`} />
+              <span class="bar-value">{full(b.value)}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  <p class="source caps">
+    {sample && <span>Sample data, not real.</span>}
+    {source && <span>Source: {source}</span>}
+  </p>
+
+  <details class="data">
+    <summary class="caps">Show the data <Icon name="chevron-down" /></summary>
+    <div class="table">
+      {
+        kind === "line" ? (
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{xLabel || "Point"}</th>
+                {series.map((s) => <th scope="col">{s.name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {xs.map((x, i) => (
+                <tr>
+                  <th scope="row">{x}</th>
+                  {hover.series.map((s) => <td>{s.values[i]?.label ?? "—"}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table>
+            <tbody>
+              {bars.map((b) => (
+                <tr>
+                  <th scope="row">{b.label}</th>
+                  <td>{full(b.value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+    </div>
+  </details>
+</figure>
+
+<script>
+  // Hover, touch, and arrow keys read the nearest point on a line chart: a white rule, a dot on each line,
+  // and the values in a white box beside them.
+  type Hover = {
+    x: string[];
+    pos: number[];
+    series: { name: string; dash: string; values: ({ label: string; top: number } | null)[] }[];
+  };
+
+  const SVG = "http://www.w3.org/2000/svg";
+  const key = (dash: string) => {
+    const svg = document.createElementNS(SVG, "svg");
+    svg.setAttribute("viewBox", "0 0 28 8");
+    svg.setAttribute("class", "key");
+    const line = document.createElementNS(SVG, "line");
+    for (const [k, v] of Object.entries({ x1: "2", y1: "4", x2: "26", y2: "4" })) line.setAttribute(k, v);
+    if (dash) line.setAttribute("stroke-dasharray", dash);
+    // appendChild, not append: Cloudflare's runtime types redeclare Element.append for HTMLRewriter
+    svg.appendChild(line);
+    return svg;
+  };
+
+  document.querySelectorAll<HTMLElement>(".chart .area[data-hover]").forEach((area) => {
+    const data: Hover = JSON.parse(area.dataset.hover ?? "{}");
+    const cross = area.querySelector<HTMLElement>(".cross")!;
+    const tip = cross.querySelector<HTMLElement>(".tip")!;
+    const dots = [...area.querySelectorAll<HTMLElement>(".dot.live")];
+    let index = -1;
+
+    const show = (i: number) => {
+      index = Math.max(0, Math.min(data.x.length - 1, i));
+      const left = data.pos[index];
+      cross.hidden = false;
+      cross.style.left = `${left}%`;
+      tip.classList.toggle("flip", left > 55);
+
+      const head = document.createElement("strong");
+      head.textContent = data.x[index];
+      const rows = data.series.map((s) => {
+        const row = document.createElement("span");
+        row.className = "tip-row";
+        if (data.series.length > 1) {
+          row.appendChild(key(s.dash));
+          row.appendChild(document.createTextNode(`${s.name} `));
+        }
+        const value = document.createElement("b");
+        value.textContent = s.values[index]?.label ?? "—";
+        row.appendChild(value);
+        return row;
+      });
+      tip.replaceChildren(head, ...rows);
+
+      dots.forEach((dot, s) => {
+        const v = data.series[s].values[index];
+        dot.hidden = !v;
+        if (v) dot.style.cssText = `left: ${left}%; top: ${v.top}%`;
+      });
+    };
+
+    const hide = () => {
+      cross.hidden = true;
+      dots.forEach((d) => (d.hidden = true));
+    };
+
+    const nearest = (clientX: number) => {
+      const r = area.getBoundingClientRect();
+      const p = ((clientX - r.left) / r.width) * 100;
+      let best = 0;
+      data.pos.forEach((q, i) => {
+        if (Math.abs(q - p) < Math.abs(data.pos[best] - p)) best = i;
+      });
+      return best;
+    };
+
+    area.addEventListener("pointermove", (e) => {
+      const i = nearest(e.clientX);
+      if (i !== index || cross.hidden) show(i);
+    });
+    area.addEventListener("pointerdown", (e) => show(nearest(e.clientX)));
+    area.addEventListener("pointerleave", hide);
+    area.addEventListener("focus", () => show(index < 0 ? data.x.length - 1 : index));
+    area.addEventListener("blur", hide);
+    area.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        show(index + (e.key === "ArrowLeft" ? -1 : 1));
+      } else if (e.key === "Escape") hide();
+    });
+  });
+</script>
+
+<style>
+  .chart {
+    margin-block: 2.4em;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem);
+    line-height: 1.3;
+  }
+
+  .name {
+    font-size: 1.15em;
+    padding-bottom: 10px;
+    border-bottom: var(--rule);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    list-style: none;
+    margin-top: 14px;
+  }
+
+  .legend li { display: flex; align-items: center; gap: 8px; }
+
+  .key {
+    width: 28px;
+    height: 8px;
+    flex: none;
+    overflow: visible;
+  }
+
+  .key line,
+  .tip :global(.key line) {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  /* ---- Line: y labels | plot | end labels, with the x labels under the plot */
+  .line {
+    display: grid;
+    grid-template-columns: var(--ylab) minmax(0, 1fr) var(--endlab);
+    grid-template-rows: clamp(220px, 30vw, 400px) auto;
+    column-gap: 12px;
+    margin-top: 22px;
+  }
+
+  .y,
+  .ends,
+  .x { position: relative; }
+
+  .y span {
+    position: absolute;
+    right: 0;
+    transform: translateY(50%);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ends span {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+
+  .x {
+    grid-column: 2;
+    height: 2em;
+    margin-top: 8px;
+  }
+
+  .x span {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .x span:first-child { transform: none; }
+  .x span:last-child:not(:first-child) { transform: translateX(-100%); }
+
+  .area {
+    position: relative;
+    touch-action: pan-y;
+    cursor: crosshair;
+  }
+
+  .area:focus-visible { outline-offset: 6px; }
+
+  .area svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .grid {
+    stroke: var(--faint);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .grid.base { stroke: var(--paper); }
+
+  .mark {
+    fill: none;
+    stroke: var(--paper);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* End and hover dots: 10px, ringed in the blue so they stay readable where lines cross */
+  .dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--paper);
+    box-shadow: 0 0 0 2px var(--ink);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .cross {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--paper);
+    pointer-events: none;
+  }
+
+  .cross[hidden],
+  .dot[hidden] { display: none; }
+
+  .tip {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    display: grid;
+    gap: 4px;
+    padding: 8px 10px;
+    background: var(--paper);
+    color: var(--ink);
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  .tip.flip { left: auto; right: 10px; }
+  .tip :global(.tip-row) { display: flex; align-items: center; gap: 8px; }
+  .tip :global(b) { margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+
+  /* ---- Bars: label | bar with its value at the tip. Bars are square-ended, like everything on this site. */
+  .bars {
+    display: grid;
+    gap: 6px;
+    margin-top: 18px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: min(var(--blab), 40%) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+    transition: opacity 0.2s ease-out;
+  }
+
+  .bars:has(.bar-row:hover) .bar-row:not(:hover) { opacity: 0.45; }
+
+  .bar-label { overflow-wrap: anywhere; }
+
+  .track {
+    display: flex;
+    align-items: center;
+    padding-right: var(--bval);
+    min-height: 28px;
+  }
+
+  .bar {
+    flex: none;
+    width: calc(var(--f) * 100%);
+    min-width: 2px;
+    height: 20px;
+    background: var(--paper);
+  }
+
+  .bar-value {
+    padding-left: 10px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Source line and the data table */
+  .source {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-top: 14px;
+  }
+
+  .source:empty { display: none; }
+
+  .data { margin-top: 10px; }
+
+  .data summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    cursor: pointer;
+    list-style: none;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.25em;
+  }
+
+  .data summary::-webkit-details-marker { display: none; }
+  .data summary :global(.icon) { transition: transform 0.2s ease-out; }
+  .data[open] summary :global(.icon) { transform: rotate(180deg); }
+
+  .table { overflow-x: auto; margin-top: 12px; }
+
+  .data table {
+    border-collapse: collapse;
+    min-width: min(100%, 28rem);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .data :is(th, td) {
+    text-align: left;
+    padding: 8px 24px 8px 0;
+    border-bottom: 1px solid var(--faint);
+  }
+
+  .data thead th { border-bottom: var(--rule); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar-row, .data summary :global(.icon) { transition: none; }
+  }
+</style>

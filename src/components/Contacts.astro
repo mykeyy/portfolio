@@ -1,0 +1,77 @@
+---
+// Email, X, GitHub, Discord as full-width wipe rows. The value starts on the ledger's title column (--lead).
+import Icon from "./Icon.astro";
+import Wipe from "./Wipe.astro";
+import { mailto, site } from "../site";
+
+const contacts = [
+  { label: "Email", value: site.email, href: mailto, icon: "mail" },
+  { label: "X", value: "@" + site.links.x.split("/").pop(), href: site.links.x, icon: "x" },
+  { label: "GitHub", value: site.links.github.split("/").pop(), href: site.links.github, icon: "github" },
+  { label: "Discord", value: site.discord, href: site.links.discord, icon: "discord" },
+] as const;
+---
+
+<ul class="contacts">
+  {
+    contacts.map((c) => (
+      <li>
+        <Wipe href={c.href} class="contact" {...(c.href.startsWith("http") ? { target: "_blank", rel: "noopener" } : {})}>
+          <span class="service">
+            <Icon name={c.icon} />
+            <span class="caps label">{c.label}</span>
+          </span>
+          <span class="value">{c.value}</span>
+          <Icon name="arrow-up-right" class="go" />
+        </Wipe>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .contacts {
+    list-style: none;
+    border-top: var(--rule);
+  }
+
+  .contacts li { border-bottom: var(--rule); }
+
+  /* Rows hang past the column so the bar has room around the text; the text lines up with the column */
+  .contact {
+    --hang: clamp(6px, 0.8vw, 12px);
+    display: flex;
+    width: calc(100% + 2 * var(--hang));
+    margin-inline: calc(-1 * var(--hang));
+    font-size: clamp(1rem, 0.8rem + 0.9vw, 1.75rem);
+  }
+
+  .contact > :global(.lbl) {
+    flex: 1;
+    display: grid;
+    grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--col-gap);
+    padding: 0.7em var(--hang);
+  }
+
+  .service {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+
+  /* Big link icons take the heavier stroke, as on the coming-soon page */
+  .contact :global(.icon) { stroke-width: 2; }
+
+  .value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 759px) {
+    .contact > :global(.lbl) { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .label { display: none; }
+  }
+</style>

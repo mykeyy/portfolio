@@ -1,0 +1,210 @@
+---
+// The ledger: projects and writing as one numbered record, newest first. Each row is one wipe link.
+// With `filters`, a row of buttons narrows it by kind (the URL keeps the choice as ?kind=...).
+import Icon from "./Icon.astro";
+import Wipe from "./Wipe.astro";
+import { KIND_LABEL, pad, type Entry, type Kind } from "../lib/entries";
+
+interface Props {
+  entries: Entry[];
+  label: string;
+  filters?: Kind[];
+}
+
+const { entries, label, filters = [] } = Astro.props;
+
+const PLURAL: Record<Kind, string> = { project: "Projects", research: "Research", note: "Notes" };
+const count = (kind: Kind) => entries.filter((e) => e.kind === kind).length;
+const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
+---
+
+<section class="ledger wrap" data-ledger aria-label={label}>
+  {
+    filters.length > 0 && entries.length > 0 && (
+      <div class="filters caps" role="group" aria-label="Show" hidden>
+        <Wipe data-filter="all" aria-pressed="true">
+          All <span class="n">{pad(entries.length)}</span>
+        </Wipe>
+        {filters.map((kind) => (
+          <Wipe data-filter={kind} aria-pressed="false" disabled={count(kind) === 0}>
+            {PLURAL[kind]} <span class="n">{pad(count(kind))}</span>
+          </Wipe>
+        ))}
+        <p class="sr-only" aria-live="polite" data-status />
+      </div>
+    )
+  }
+
+  {
+    entries.length === 0 ? (
+      <p class="empty caps">Nothing here yet.</p>
+    ) : (
+      <>
+        <div class="head caps" aria-hidden="true">
+          <span>No.</span>
+          <span>Year</span>
+          <span>Kind</span>
+          <span>Title</span>
+        </div>
+        <ol class="rows">
+          {entries.map((e) => (
+            <li data-kind={e.kind}>
+              <Wipe href={e.href} class="row">
+                <span class="no caps">{pad(e.no)}</span>
+                <span class="meta caps">
+                  <span class="year">{e.date.getFullYear()}</span>
+                  <span class="kind">{KIND_LABEL[e.kind]}</span>
+                </span>
+                <span class="title">{e.title}</span>
+                <span class="sum">{e.summary}</span>
+                <span class="go caps">
+                  {e.draft && <span class="draft">Draft</span>}
+                  {verb(e.kind)}
+                  <Icon name="arrow-right" />
+                </span>
+              </Wipe>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+</section>
+
+<script>
+  const PLURAL: Record<string, string> = { project: "projects", research: "research pieces", note: "notes" };
+
+  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((ledger) => {
+    const bar = ledger.querySelector<HTMLElement>(".filters");
+    if (!bar) return;
+    const buttons = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
+    const rows = [...ledger.querySelectorAll<HTMLElement>("[data-kind]")];
+    const status = bar.querySelector<HTMLElement>("[data-status]");
+
+    const show = (kind: string, announce = true) => {
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === kind)));
+      let shown = 0;
+      rows.forEach((row) => {
+        row.hidden = kind !== "all" && row.dataset.kind !== kind;
+        if (!row.hidden) shown++;
+      });
+      if (announce && status) status.textContent = `Showing ${shown} ${kind === "all" ? "entries" : PLURAL[kind]}`;
+
+      const url = new URL(location.href);
+      if (kind === "all") url.searchParams.delete("kind");
+      else url.searchParams.set("kind", kind);
+      history.replaceState(history.state, "", url);
+    };
+
+    buttons.forEach((b) => b.addEventListener("click", () => show(b.dataset.filter ?? "all")));
+
+    const asked = new URLSearchParams(location.search).get("kind");
+    if (asked && buttons.some((b) => b.dataset.filter === asked && !b.disabled)) show(asked, false);
+    bar.hidden = false;
+  });
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: clamp(14px, 1.6vw, 22px);
+    margin-left: -0.5em;
+  }
+
+  .filters[hidden] { display: none; }
+
+  .n { font-variant-numeric: tabular-nums; }
+
+  /* Columns: number, year, kind, then the title and its line, then the action */
+  .head,
+  .row > :global(.lbl) {
+    display: grid;
+    grid-template-columns: var(--col-no) var(--col-year) var(--col-kind) minmax(0, 1fr) auto;
+    column-gap: var(--col-gap);
+  }
+
+  .head {
+    padding: 0 0 10px;
+    border-bottom: var(--rule);
+  }
+
+  .rows { list-style: none; }
+  .rows li { border-bottom: var(--rule); }
+  .rows li[hidden] { display: none; }
+
+  /* Rows hang a few pixels past the column on both sides so the white bar has room around the text,
+     while the text itself lines up with everything above and below. */
+  .row {
+    display: flex;
+    width: calc(100% + 2 * var(--hang));
+    margin-inline: calc(-1 * var(--hang));
+    --hang: clamp(6px, 0.8vw, 12px);
+  }
+
+  .row > :global(.lbl) {
+    flex: 1;
+    grid-template-areas: "no year kind title go" "no year kind sum go";
+    align-items: baseline;
+    row-gap: 6px;
+    padding: clamp(14px, 1.6vw, 22px) var(--hang);
+  }
+
+  .no { grid-area: no; font-variant-numeric: tabular-nums; }
+  .meta { display: contents; }
+  .meta .year { grid-area: year; font-variant-numeric: tabular-nums; }
+  .meta .kind { grid-area: kind; }
+
+  .title {
+    grid-area: title;
+    font-family: var(--display);
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: clamp(1.75rem, 0.9rem + 2.7vw, 3.75rem);
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .sum {
+    grid-area: sum;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(0.9375rem, 0.88rem + 0.2vw, 1.0625rem);
+    line-height: 1.45;
+    max-width: 60ch;
+  }
+
+  .go {
+    grid-area: go;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    justify-self: end;
+  }
+
+  /* Only seen in `bun run dev`: drafts never reach a build */
+  .draft {
+    margin-right: 0.6em;
+    padding: 0.1em 0.4em;
+    outline: 1px solid currentColor;
+  }
+
+  .empty { padding: 22px 0; border-top: var(--rule); border-bottom: var(--rule); }
+
+  /* Narrow screens: number, kind and year share the top line; the title and its line take the full width */
+  @media (max-width: 759px) {
+    .head { display: none; }
+    .rows { border-top: var(--rule); }
+
+    .row > :global(.lbl) {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "no meta go" "title title title" "sum sum sum";
+      row-gap: 8px;
+    }
+
+    .meta { display: flex; gap: 0.75em; grid-area: meta; }
+    .meta .year { order: 2; }
+    .title { margin-top: 4px; }
+  }
+</style>

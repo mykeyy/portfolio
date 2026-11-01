@@ -1,0 +1,13 @@
+---
+import Ledger from "../../components/Ledger.astro";
+import PageHead from "../../components/PageHead.astro";
+import Base from "../../layouts/Base.astro";
+import { getLedger, pad } from "../../lib/entries";
+
+const entries = (await getLedger()).filter((e) => e.kind === "project");
+---
+
+<Base title="Projects" theme="projects" description="Projects by Mykey Nishikawa, with the problem, the role, and the outcome of each.">
+  <PageHead title="Projects" rgb note={`${pad(entries.length)} ${entries.length === 1 ? "entry" : "entries"}`} />
+  <Ledger entries={entries} label="Projects" />
+</Base>

@@ -38,6 +38,33 @@
         ],
         "createdAt": "2026-10-30T23:49:03.182Z",
         "reason": "Deliberate design, documented in README (Discord status: long titles scroll like an MP3 player). Motion only runs when a live now-playing title overflows the card, and it is disabled under prefers-reduced-motion (index.html .presence .activity.scroll rule). Not a decorative marquee; attribution to the original author, not this session."
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T01:08:02.989Z",
+        "reason": "build thread: the flagged layers are single solid colors clipped to text, drawing the brand's link wipe on inline prose links (finish reviewer fix 6); no color gradient anywhere"
+      },
+      {
+        "rule": "overused-font",
+        "value": "roboto",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T01:16:00.181Z",
+        "reason": "Impeccable finish reviewer ruling, 2026-11-01: Roboto Mono is the pinned brand face (PRODUCT.md); Roboto is its sibling used only for long reading text because the brand keeps mono for data. Reviewer: the Roboto choice should stand; dismiss all four warnings."
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/components/PageHead.astro"
+        ],
+        "createdAt": "2026-11-01T01:57:40.916Z",
+        "reason": "user confirmed: asked for the word PROJECTS itself in an RGB gradient (2026-11-01 brief with artboards)"
       }
     ]
   }
