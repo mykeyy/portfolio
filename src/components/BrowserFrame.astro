@@ -1,0 +1,64 @@
+---
+// A website screenshot in a plain browser frame, drawn with the site's 2px rules: an address bar with three square
+// buttons and the address in mono. No glossy device render: the work is the screenshot.
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  url?: string;
+  sizes: string;
+  eager?: boolean;
+}
+
+const { src, alt, url, sizes, eager = false } = Astro.props;
+const address = url ? new URL(url).host : "";
+---
+
+<div class="browser">
+  <div class="chrome" aria-hidden="true">
+    <i></i><i></i><i></i>
+    {address && <span class="addr">{address}</span>}
+  </div>
+  <Image src={src} alt={alt} widths={[640, 1024, 1600, 2400]} sizes={sizes} loading={eager ? "eager" : "lazy"} />
+</div>
+
+<style>
+  .browser {
+    width: 100%;
+    border: 2px solid currentColor;
+    background: currentColor;
+  }
+
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--plate);
+    border-bottom: 2px solid currentColor;
+  }
+
+  .chrome i {
+    width: 10px;
+    height: 10px;
+    border: 2px solid currentColor;
+  }
+
+  .addr {
+    flex: 1;
+    margin-left: 10px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    padding-right: 52px;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+</style>

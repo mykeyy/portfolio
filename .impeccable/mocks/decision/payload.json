@@ -1,0 +1,46 @@
+{
+  "title": "Pick the home page structure",
+  "question": "The look stays the coming-soon world: blue, white, Anton, Roboto Mono, white wipe bars. These three are different ways to lay out the home page. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "frame",
+      "kind": "assigned",
+      "label": "Name as the frame",
+      "kicker": "THE ROLL",
+      "lineage": "the one-screen coming-soon page, grown up",
+      "thesis": "MYKEY across the top, NISHIKAWA across the bottom, and all your work held in the band between them.",
+      "palette": ["#061ecf", "#ffffff"],
+      "materials": ["Anton at full width", "Roboto Mono index rows", "white wipe bars"],
+      "viewport": "Desktop is one screen like the coming-soon page: MYKEY top-left with the menu beside it, Projects and Writing indexes side by side in the middle band, NISHIKAWA spanning the bottom edge.",
+      "risk": "The band fits about four rows per list; on phones the frame has to become a stack.",
+      "html": ".impeccable/mocks/decision/frame.html"
+    },
+    {
+      "id": "ledger",
+      "kind": "dealt",
+      "label": "One ledger",
+      "lineage": "a numbered record of output",
+      "thesis": "Everything you make and write in one numbered ledger, newest first, right under your name.",
+      "palette": ["#061ecf", "#ffffff"],
+      "materials": ["Anton name", "Roboto Mono table", "filter tabs as wipe links"],
+      "viewport": "Your name spans the width; the ledger starts at the fold with No., Year, Kind, Title columns and All / Projects / Research / Notes filters.",
+      "risk": "With only a few entries at launch the ledger looks short; it gets better the more you ship.",
+      "html": ".impeccable/mocks/decision/ledger.html"
+    },
+    {
+      "id": "spec",
+      "kind": "dealt",
+      "label": "Spec sheet",
+      "lineage": "a product spec card, about a person",
+      "thesis": "Your name as the specimen, then a short mono table where every row is a fact or a door into a section.",
+      "palette": ["#061ecf", "#ffffff"],
+      "materials": ["Anton name", "oversized Roboto Mono rows", "row-wide wipe bars"],
+      "viewport": "Your name spans the width; below it a table: Based in, Does, Projects 03, Research 02, Notes 04, Visitors, Contact. Count rows open their index pages.",
+      "risk": "The home shows no project titles, so visitors need one more click to see actual work.",
+      "html": ".impeccable/mocks/decision/spec.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}

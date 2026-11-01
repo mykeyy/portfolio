@@ -2,13 +2,9 @@
 
 # MYKY.CC
 
-### THE BIRDS ARE STILL SLEEPING.
+### THE PORTFOLIO, IN BETA.
 
-Coming soon. My portfolio is on its way.
-
-<br>
-
-<img src="assets/desktop.png" alt="The myky.cc coming-soon page on a 1920 by 1080 screen: a large headline, a Discord status card, a countdown, and links to X, GitHub, Discord, and email" width="100%">
+Projects, research, and notes, in one blue and one white.
 
 </div>
 
@@ -16,166 +12,189 @@ Coming soon. My portfolio is on its way.
 
 ## What this is
 
-The placeholder for [myky.cc](https://myky.cc) while the real portfolio gets built. One HTML file, no build step, no dependencies to install.
+The real site behind [myky.cc](https://myky.cc), being built on the `portfolio` branch. The `main` branch keeps the coming-soon page live until launch on **December 8, 2026**.
 
-It tells visitors two things: the site isn't ready, and exactly when it will be. Everything else on the page is a way to reach me in the meantime.
-
-**Portfolio opens: December 8, 2026, 00:00 Philippine time.**
+This is a beta: it runs on your machine and is not deployed yet. Entries marked `draft: true` are labeled samples that show only while you run `bun run dev`.
 
 <br>
 
-## On the page
+## On the site
+
+| Page | What it does |
+|---|---|
+| **Cover** `/` | My name across one screen and the four-bar menu. Click it and an e-ink style refresh spreads from the icon (each square flashes white, then settles blue) while the bars fly out into four panels: Projects, Writing, Design, About. On phones they are four wide bands. Closing plays it backwards: the panels fly home into the icon while the refresh clears in toward it. |
+| **Projects** `/projects` | White page, RGB title. Each case study opens with the problem, my role, and the outcome, before the story. |
+| **Writing** `/writing` | Soft black and white. Research and notes, filterable (`/writing?kind=research`). Research gets a contents list that stays beside the text, charts, tables, and footnotes. |
+| **Design** `/design` | Design pieces, shown big, from `src/content/designs`. |
+| **About** `/about` | Facts, a few paragraphs, and contact: email, X, GitHub, Discord. |
+
+<br>
+
+## Built with
 
 | | |
 |---|---|
-| **Intro** | `myky.cc` types itself out on a blue screen, then the screen lifts away. Plays once per visit. Click or press any key to skip. |
-| **Headline** | The words rise into place one after another when the intro lifts. |
-| **Countdown** | Days, hours, minutes, and seconds to launch. Digits roll over on the second. |
-| **Discord status** | My live Discord presence: whether I'm online, and the song or game I'm in. Long titles scroll like an MP3 player. |
-| **Reminder** | One tap adds the launch to Google Calendar. |
-| **Links** | X, GitHub, Discord, and email. A white bar slides in behind each one on hover. |
-| **Donut** | A spinning ASCII donut in the empty space. Because. |
-
-<br>
-
-## Built to fit one screen
-
-No scrolling, on anything. The layout is sized from the space it has, not from a list of device widths.
-
-<table>
-<tr>
-<td width="60%" valign="top">
-
-- **Desktop** (1024px and up): headline top-left, donut beside it, Discord card and countdown bottom-left, links bottom-right. The links stretch to exactly the height of the column beside them.
-- **Phones and tablets**: one column. The headline grows until it spans the same width as the cards. Links become four tappable buttons.
-- Tested from 320 &times; 568 up to 2560 &times; 1440.
-- Sized with `svh`, so it stays still when a phone's browser bars slide away.
-- Respects reduced-motion settings: no typing, no wipe, no rolling digits, a still donut.
-
-</td>
-<td width="40%" valign="top">
-
-<img src="assets/mobile.png" alt="The page on a phone: the headline fills the width, with the Discord card, countdown, calendar button, and four link buttons below" width="100%">
-
-</td>
-</tr>
-</table>
-
-<br>
-
-## Look
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-<img src="assets/intro.png" alt="The intro screen: the word myky.cc in white on a blue background" width="100%">
-
-</td>
-<td width="50%" valign="top">
-
-**One blue, one white.**
-
-`#061ecf` and `#ffffff`. No gradients, no glows, no other colors.
-
-**Two typefaces.**
-
-[Anton](https://fonts.google.com/specimen/Anton) for the headline.
-[Roboto Mono](https://fonts.google.com/specimen/Roboto+Mono) Bold for numbers, labels, and links.
-
-**One icon family.**
-
-[HugeIcons](https://hugeicons.com), drawn in a single stroke style.
-
-</td>
-</tr>
-</table>
-
-<br>
-
-## Link preview
-
-Paste `myky.cc` into Discord, X, iMessage, or Slack and it unfurls into a card: a blue edge (Discord paints it from `theme-color`), the title **Mykey Nishikawa**, and a 16:9 image of the name beside a face-on ASCII donut.
-
-<div align="center">
-
-<img src="og.png" alt="The link preview image: Mykey Nishikawa in white on blue, beside an ASCII donut drawn like a zero" width="70%">
-
-</div>
-
-- The image is [`og.png`](og.png), 1200 &times; 675. Its source is [`assets/og.html`](assets/og.html): open it in a browser and screenshot it at that size, or render it with headless Chrome.
-- The tags live in the `<head>` of [`index.html`](index.html). They point at `https://myky.cc/og.png`, so `og.png` has to be served from the site root when the page goes live.
-- Discord and X cache previews. If you change the image, post the link with a throwaway query string (`https://myky.cc/?v=2`) to see the new one.
-
-<br>
-
-## About me
-
-I'm Mykey Nishikawa, an independent developer and designer based in the Philippines.
-
-This page is the whole site for now. The portfolio, the work, and the rest of the story land on launch day.
-
-<br>
-
-## Say hi
-
-| | |
-|---|---|
-| **X** | [@mykeycc](https://x.com/mykeycc) |
-| **GitHub** | [mykeyy](https://github.com/mykeyy) |
-| **Discord** | `mykey.e` |
-| **Email** | [hello@mykeyy.tech](mailto:hello@mykeyy.tech) |
+| **[Astro 7](https://astro.build)** | Every page is prerendered to plain HTML. The only JavaScript is the ledger filter, the chart readout, the contents marker, and the visitor counter. |
+| **[Cloudflare Workers](https://developers.cloudflare.com/workers/)** | Static pages are free asset requests. One Worker route, `/api/visit`, runs the visitor counter. |
+| **[Cloudflare D1](https://developers.cloudflare.com/d1/)** | The visitor count, carried over from the coming-soon page. |
+| **[Bun](https://bun.sh)** | Installs packages and runs Astro. |
 
 <br>
 
 ## Run it
 
-It's a single file. Open `index.html` in a browser.
-
-Or serve it locally:
-
 ```bash
-npx serve .
+bun install
 ```
 
-One URL flag is useful while working on it:
+```bash
+bun run dev
+```
 
-| Add to the URL | What it does |
+Opens at `http://localhost:4321`. Drafts show here, and the visitor count shows a dash (see the note below).
+
+| Command | What it does |
 |---|---|
-| `?intro` | Plays the intro again, even if you've already seen it this session. |
+| `bun run dev` | The site with live reload, drafts included. |
+| `bun run build` | The production build in `dist/`, drafts left out. |
+| `bun run preview` | Builds, then serves it in Cloudflare's local runtime with a local D1, so the visitor counter works. Run `bun run db:init` once first. |
+| `bun run check` | Type-checks the pages and content. |
+
+**Why Bun and Node both show up.** Astro 7 needs Node 22.23 or newer, and this machine has Node 22.16, so the scripts run Astro on Bun (`bun --bun astro ...`). Wrangler, Cloudflare's tool, refuses to run on Bun, so it runs on Node. Cloudflare's local runtime also can't start from Bun on Windows, so `bun run dev` runs plain Astro without it: every page works, only the visitor counter is missing. Updating Node to the current LTS removes all of this.
+
+<br>
+
+## Add a project
+
+One Markdown file per project in [`src/content/projects`](src/content/projects). The file name becomes the URL.
+
+```md
+---
+title: myky.cc coming soon
+summary: One line on what it is.
+date: 2026-10-28
+role: Design and development
+problem: The problem, in a sentence or two. People read this first.
+outcome: What changed because of the work.
+stack: [HTML, CSS, Cloudflare]
+url: https://myky.cc            # optional
+repo: https://github.com/...    # optional
+cover: ./cover.png              # optional, next to the file
+coverAlt: What the image shows  # with cover
+draft: false                    # true shows it only in dev
+---
+
+The case study, in Markdown.
+```
+
+<br>
+
+## Add a design piece
+
+One Markdown file per piece in [`src/content/designs`](src/content/designs), with its images next to it. The site stays blue and white; each piece sits on its own **plate** in a color you pick from the work, and the whole page takes on that color while the piece is in view.
+
+```md
+---
+title: Client logo
+summary: One line on what it is.
+date: 2026-11-01
+kind: logo                 # web (browser frame), logo (specimen), or visual (the image as is)
+size: half                 # full or half; two halves sit side by side
+plate: "#0b0b0b"           # the color the work sits on, as a 6-digit hex
+mark: ./logo.png           # logo only; web and visual pieces use image: ./shot.png
+markInverse: ./logo-inverse.png
+colors:
+  - { name: Blue, hex: "#061ecf" }
+typeface: Geist Mono Bold
+url: https://example.com   # web only, shown in the browser bar
+alt: What the image shows
+tools: [Figma]
+---
+```
+
+Text and frames on a plate turn black or white on their own, whichever reads better on the color you picked.
+
+<br>
+
+## Write something
+
+One file per piece in [`src/content/writing`](src/content/writing). Use `kind: research` for long pieces and `kind: note` for short ones. Use `.mdx` when the piece has charts.
+
+```md
+---
+title: The title
+summary: The question you looked into, or the answer you found.
+kind: research
+date: 2026-11-01
+updated: 2026-11-03   # optional
+draft: false
+---
+```
+
+Charts need no import inside `.mdx`:
+
+```mdx
+<Chart
+  kind="line"
+  title="What the chart shows"
+  source="Where the numbers come from"
+  xLabel="Year"
+  unit="%"
+  series={[
+    { name: "Alpha", data: [[2024, 12], [2025, 18], [2026, 21]] },
+    { name: "Beta", data: [[2024, 30], [2025, 28], [2026, 31]] },
+  ]}
+/>
+
+<Chart kind="bar" title="..." unit=" KB" bars={[{ label: "HTML", value: 40.8 }]} />
+```
+
+| Prop | What it does |
+|---|---|
+| `kind` | `line` (up to three series, told apart by solid, dashed, and dotted lines) or `bar` (amounts, value at each tip) |
+| `title` | What the chart shows. Required. |
+| `source` | Where the numbers come from. |
+| `sample` | Labels the numbers as made up. Remove it once they're real. |
+| `unit` | Added to every value: `%`, ` KB`, ` ms`. |
+| `tone` (on a bar) | 1 to 4: which data color the bar takes. Use it to pick out the bar the story is about. |
+| `xLabel` | Names the first column of the data table. |
+| `min`, `max` | Fix the y axis range on a line chart. |
+
+Every chart is drawn when the site builds, reads values on hover, tap, or arrow keys, and keeps its numbers in a table under **Show the data**. [`sample-research.mdx`](src/content/writing/sample-research.mdx) shows every part a piece can use.
 
 <br>
 
 ## Make it yours
 
-Everything to change is near the top of the script in [`index.html`](index.html):
-
 | Setting | Where |
 |---|---|
-| Launch date and time | `OPENS_AT` |
-| Discord user ID | `DISCORD_ID` |
-| Links and email | the `<nav>` block near the bottom of the page |
-| Colors | `--ink` and `--paper` in `:root` |
+| Name, email, links | [`src/site.ts`](src/site.ts) |
+| About text | [`src/pages/about.astro`](src/pages/about.astro) |
+| Colors, fonts, spacing, the hover wipe | `:root` in [`src/styles/global.css`](src/styles/global.css) |
+| Link-preview card (`public/og.png`, 1200 × 630) | [`assets/og-portfolio.html`](assets/og-portfolio.html): open it and screenshot it at exactly 1200 × 630 |
 
-The Discord card is powered by [Lanyard](https://github.com/Phineas/lanyard). To make it show your status, join the [Lanyard Discord server](https://discord.gg/lanyard) with the account you're tracking. If the status can't be fetched, the card simply stays hidden.
+<br>
+
+## Before it goes live
+
+- In [`wrangler.jsonc`](wrangler.jsonc), add the `database_id` of the D1 database the coming-soon page uses, so the visitor count carries over. Without it, the first deploy creates a new, empty one.
+- Replace the sample entries with real projects and writing, and write the About text.
+- Connect the repo to Cloudflare Workers Builds (build command `bun run build`), or deploy from here with `bun run deploy`.
+- Point myky.cc at the Worker on launch day, and merge this branch into `main`.
 
 <br>
 
 ## What's in the folder
 
 ```
-index.html     the whole site
-og.png         the link-preview image (serve it next to index.html)
-PRODUCT.md     what the page is for, its tone, and what it avoids
-assets/        screenshots for this README, and og.html, the source of og.png
-.claude/       design notes for working on the page with Claude Code
-.impeccable/   design-check settings
+src/pages/        the routes: home, projects, writing, about, 404, api/visit
+src/components/   Ledger, Chart, Header, Footer, Wipe (the hover), Icon (HugeIcons)
+src/content/      projects and writing, one Markdown file each
+src/styles/       global.css: fonts, colors, the wipe, article typography
+public/           fonts and og.png, served as-is
+schema.sql        the visitor-counter table
+wrangler.jsonc    the Cloudflare Worker and its D1 binding
+PRODUCT.md        what the site is for, its tone, and what it avoids
+.claude/          design notes for working on the site with Claude Code
+.impeccable/      design-check settings and the page briefs
 ```
-
-<br>
-
-<div align="center">
-
-**See you on December 8.**
-
-</div>

@@ -1,21 +1,30 @@
 # Product
 
 ## What it is
-Personal domain landing page for myky.cc, a coming-soon placeholder for Mykey Nishikawa (independent developer and designer). One page, no navigation, no forms, no claims beyond the placeholder.
+myky.cc, the portfolio of Mykey Nishikawa, independent developer and designer in the Philippines. It replaces the coming-soon page on launch day, December 8, 2026 (Philippine time). Until then it is built on the `portfolio` branch as a local beta.
 
 ## Purpose
-Tell a visitor the site is not ready yet, and show when it opens: a live countdown to Dec 8, 2026 00:00 Philippine time (42 days after Oct 27). Beyond that, visitors can add the launch to Google Calendar, see my Discord status, and reach me through X, GitHub, Discord, or email. No forms, nothing to sign up for.
+Show who Mykey is and what Mykey makes, designs, and writes, and make it easy to get in touch.
+- **Cover (home):** one screen, the name and one line. The four-bar menu opens the site: a glitch of square cells spreads from the icon, then four panels (desktop) or four bands (phones and portrait tablets) lead to the sections. Closing plays it backwards: the panels fly home into the icon while the refresh clears in toward it. Scrolling never opens it.
+- **Projects:** a few case studies, each opening with the problem, the role, and the outcome before the story. White page, the title in RGB.
+- **Writing:** research (long pieces with charts, tables, sources, and footnotes; future LLM benchmarks belong here) and notes. Soft black and white, for long reading.
+- **Design:** UI and visual design pieces, shown large.
+- **About:** facts, a few paragraphs, and contact (email, X, GitHub, Discord).
+The unique-visitor count from the coming-soon page counts on every page. No forms, nothing to sign up for.
 
 ## Users
-Friends, visitors, and people who typed the domain by mistake. They arrive, read the line, and leave.
+Friends, people who might hire or work with Mykey, and readers who come for the research. They read the name, scan the ledger of work and writing, open one entry, and leave or get in touch.
 
 ## Tone
-Brutal, minimal, confident, a little dry. The copy is the personality: "The birds are still sleeping." Typeset in Anton, uppercase, with Roboto Mono Bold for numbers, labels, and links.
+Brutal, minimal, confident, a little dry. The copy is the personality. Typeset in Anton, uppercase, with Roboto Mono Bold for numbers, labels, and links. Roboto carries long reading text only.
 
 ## Palette
-Single color #061ecf for the background. Text is white (#FFFFFF). No other hues.
+#061ecf ground with white (#FFFFFF) for the cover, menu, Design, and About. Writing swaps to off-black #111111 and off-white #e6e6e1 so long reading is easier on the eyes. Projects swaps to white with near-black, and is the only place with other hues: pure red, green, and blue in its title. No other colors anywhere.
+
+## Truth
+Facts only from Mykey. No invented projects, clients, numbers, or quotes. Sample content is marked as a draft, and made-up chart data is labeled as sample data.
 
 ## Anti-references
 - Aurora or radial gradient washes, soft glowing shadows, glassmorphism, floating particles.
 - Rounded pill badges, pulsing dots, and small uppercase eyebrow labels above headlines.
-- Generic "Coming soon" SaaS templates.
+- Generic portfolio templates: a hero, three equal project cards, a "latest posts" strip.

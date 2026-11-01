@@ -38,6 +38,105 @@
         ],
         "createdAt": "2026-10-30T23:49:03.182Z",
         "reason": "Deliberate design, documented in README (Discord status: long titles scroll like an MP3 player). Motion only runs when a live now-playing title overflows the card, and it is disabled under prefers-reduced-motion (index.html .presence .activity.scroll rule). Not a decorative marquee; attribution to the original author, not this session."
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T01:08:02.989Z",
+        "reason": "build thread: the flagged layers are single solid colors clipped to text, drawing the brand's link wipe on inline prose links (finish reviewer fix 6); no color gradient anywhere"
+      },
+      {
+        "rule": "overused-font",
+        "value": "roboto",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T01:16:00.181Z",
+        "reason": "Impeccable finish reviewer ruling, 2026-11-01: Roboto Mono is the pinned brand face (PRODUCT.md); Roboto is its sibling used only for long reading text because the brand keeps mono for data. Reviewer: the Roboto choice should stand; dismiss all four warnings."
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/components/PageHead.astro"
+        ],
+        "createdAt": "2026-11-01T01:57:40.916Z",
+        "reason": "user confirmed: asked for the word PROJECTS itself in an RGB gradient (2026-11-01 brief with artboards)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T06:47:14.489Z",
+        "reason": "user confirmed: picked Geist Mono Black from a side-by-side of bold monos (2026-11-01)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T06:47:14.873Z",
+        "reason": "user confirmed: asked for Vercel's open-source font; Geist is Geist Mono's sibling for reading text (2026-11-01)"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "anton",
+        "files": [
+          ".impeccable/mocks/decision/frame.html"
+        ],
+        "createdAt": "2026-11-01T07:05:01.264Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "roboto mono",
+        "files": [
+          ".impeccable/mocks/decision/frame.html"
+        ],
+        "createdAt": "2026-11-01T07:05:01.714Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "anton",
+        "files": [
+          ".impeccable/mocks/decision/ledger.html"
+        ],
+        "createdAt": "2026-11-01T07:05:02.136Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "roboto mono",
+        "files": [
+          ".impeccable/mocks/decision/ledger.html"
+        ],
+        "createdAt": "2026-11-01T07:05:02.547Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "anton",
+        "files": [
+          ".impeccable/mocks/decision/spec.html"
+        ],
+        "createdAt": "2026-11-01T07:05:02.982Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "roboto mono",
+        "files": [
+          ".impeccable/mocks/decision/spec.html"
+        ],
+        "createdAt": "2026-11-01T07:05:03.454Z",
+        "reason": "archived decision sketch from the Nov 1 surface round, made before the switch to Geist; kept as a record, not shipped"
       }
     ]
   }

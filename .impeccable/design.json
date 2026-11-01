@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T00:00:00Z",
+  "title": "Design System: myky.cc",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "primary", "displayName": "Ledger Blue", "canonical": "#061ecf", "tonalRamp": ["oklch(18% 0.10 265)", "oklch(26% 0.15 265)", "oklch(33% 0.21 265)", "oklch(40% 0.26 265)", "oklch(52% 0.22 265)", "oklch(66% 0.15 265)", "oklch(80% 0.08 265)", "oklch(94% 0.025 265)"] },
+      "paper": { "role": "neutral", "displayName": "Paper White", "canonical": "#ffffff", "tonalRamp": ["oklch(18% 0 0)", "oklch(30% 0 0)", "oklch(42% 0 0)", "oklch(55% 0 0)", "oklch(67% 0 0)", "oklch(79% 0 0)", "oklch(90% 0 0)", "oklch(100% 0 0)"] },
+      "faint": { "role": "neutral", "displayName": "Faint White", "canonical": "rgb(255 255 255 / 0.3)", "tonalRamp": ["rgb(255 255 255 / 0.3)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (the name)", "purpose": "Owner's name on home only, ink fit edge to edge: font-size 100cqw / --fit (6.764 one line; 4.007 two lines at container <= 520px, line-height 0.92), margin-left -0.03125em." },
+      "headline": { "displayName": "Headline", "purpose": "Index page names; case-study, article, Contact, More and 404 heads use sibling clamps in Geist Mono 900." },
+      "title": { "displayName": "Entry Title", "purpose": "Ledger entry titles." },
+      "section": { "displayName": "Section", "purpose": "h2 inside prose." },
+      "label": { "displayName": "Label", "purpose": "Base text of the site: nav, filters, columns, numbers, dates, link labels, contact values. Caps at 0.04em where uppercase. Tabular numbers." },
+      "body": { "displayName": "Reading", "purpose": "Long-form prose at a 68ch measure. Geist appears only for reading text." },
+      "summary": { "displayName": "Summary", "purpose": "One line under each ledger title, 60ch." }
+    },
+    "shadows": [
+      { "name": "chart-dot-ring", "value": "0 0 0 2px #061ecf", "purpose": "Blue ring around 10px chart dots so they read where lines cross. Not elevation; the system is flat." }
+    ],
+    "motion": [
+      { "name": "wipe", "value": "0.4s cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The only interaction motion: white bar scaleX from the right and the blue label copy's clip-path, same duration and easing. Inline prose links animate a registered --p percentage on the same value. Removed under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "phone-nav", "value": "479px" },
+      { "name": "compact", "value": "759px" },
+      { "name": "name-two-lines (container)", "value": "520px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Wipe Link",
+      "kind": "button",
+      "refersTo": "wipe-link",
+      "description": "Every link and button. Label drawn twice; the blue copy is clipped in step with the white bar sweeping in from the right.",
+      "html": "<a class=\"ds-wipe\" href=\"#\"><span class=\"ds-lbl\">PROJECTS</span><span class=\"ds-lbl ds-ink\" aria-hidden=\"true\">PROJECTS</span></a>",
+      "css": ".ds-wipe { position: relative; isolation: isolate; display: inline-flex; color: var(--paper, #fff); background: var(--ink, #061ecf); text-decoration: none; font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: 0.04em; outline: none; } .ds-wipe::before { content: ''; position: absolute; inset: 0; z-index: 0; background: var(--paper, #fff); transform: scaleX(0); transform-origin: right; transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); } .ds-lbl { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 0.5em; padding: 0.25em 0.5em; } .ds-ink { position: absolute; inset: 0; z-index: 2; color: var(--ink, #061ecf); pointer-events: none; clip-path: inset(0 0 0 100%); transition: clip-path 0.4s cubic-bezier(0.22, 1, 0.36, 1); } .ds-wipe:is(:hover, :focus-visible, :active)::before { transform: scaleX(1); } .ds-wipe:is(:hover, :focus-visible, :active) > .ds-ink { clip-path: inset(0); }"
+    },
+    {
+      "name": "Held Wipe (selected)",
+      "kind": "chip",
+      "refersTo": "wipe-link-held",
+      "description": "Current page, pressed filter, current section: the wipe stays drawn.",
+      "html": "<button class=\"ds-held\" aria-pressed=\"true\">ALL <span>06</span></button>",
+      "css": ".ds-held { display: inline-flex; gap: 0.5em; padding: 0.25em 0.5em; border: 0; background: var(--paper, #fff); color: var(--ink, #061ecf); font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; cursor: pointer; } .ds-held:focus-visible { outline: 2px solid var(--paper, #fff); outline-offset: 3px; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "wipe-link",
+      "description": "Brand left, four caps mono wipe links right; current section held.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-a ds-on\" href=\"#\">MYKY.CC</a><span><a class=\"ds-nav-a\" href=\"#\">PROJECTS</a><a class=\"ds-nav-a\" href=\"#\">WRITING</a><a class=\"ds-nav-a\" href=\"#\">ABOUT</a><a class=\"ds-nav-a\" href=\"#\">CONTACT</a></span></nav>",
+      "css": ".ds-nav { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 24px; background: var(--ink, #061ecf); font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: 0.04em; } .ds-nav span { display: flex; gap: 8px; } .ds-nav-a { color: var(--paper, #fff); text-decoration: none; padding: 0.25em 0.5em; background: linear-gradient(var(--paper, #fff), var(--paper, #fff)) right / 0% 100% no-repeat; transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0s 0.1s; } .ds-nav-a:hover, .ds-nav-a:focus-visible, .ds-on { background-size: 100% 100%; color: var(--ink, #061ecf); outline: none; }"
+    },
+    {
+      "name": "Ledger Row",
+      "kind": "custom",
+      "refersTo": "ledger-row",
+      "description": "One numbered entry: mono number, year, kind; Geist Mono 900 title and Geist summary on --lead; mono action. 2px white rule below.",
+      "html": "<a class=\"ds-row\" href=\"#\"><span>06</span><span>2026</span><span>RESEARCH</span><span class=\"ds-t\">HOW A RESEARCH PIECE IS PUT TOGETHER<small>A sample piece that shows every part a research article can use.</small></span><span>READ &rarr;</span></a>",
+      "css": ".ds-row { display: grid; grid-template-columns: 3rem 4.25rem 7.5rem minmax(0, 1fr) auto; column-gap: 20px; align-items: baseline; padding: 18px 10px; color: var(--paper, #fff); background: var(--ink, #061ecf) linear-gradient(var(--paper, #fff), var(--paper, #fff)) right / 0% 100% no-repeat; border-bottom: 2px solid var(--paper, #fff); text-decoration: none; font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1); } .ds-t { font-family: Geist Mono 900, Impact, sans-serif; font-weight: 400; font-size: 2.5rem; line-height: 0.95; letter-spacing: 0; display: grid; gap: 6px; } .ds-t small { font-family: Geist, system-ui, sans-serif; font-weight: 400; font-size: 1rem; line-height: 1.45; text-transform: none; } .ds-row:hover, .ds-row:focus-visible { background-size: 100% 100%; color: var(--ink, #061ecf); outline: none; }"
+    },
+    {
+      "name": "Contact Row",
+      "kind": "custom",
+      "refersTo": "contact-row",
+      "description": "Icon (stroke 2) and caps service, value on --lead, up-right arrow; ruled top and bottom.",
+      "html": "<a class=\"ds-contact\" href=\"#\"><span><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 6L8.91302 9.91697C11.4616 11.361 12.5384 11.361 15.087 9.91697L22 6\"/><path d=\"M2.01577 13.4756C2.08114 16.5412 2.11383 18.0739 3.24496 19.2094C4.37608 20.3448 5.95033 20.3843 9.09883 20.4634C11.0393 20.5122 12.9607 20.5122 14.9012 20.4634C18.0497 20.3843 19.6239 20.3448 20.7551 19.2094C21.8862 18.0739 21.9189 16.5412 21.9842 13.4756C22.0053 12.4899 22.0053 11.5101 21.9842 10.5244C21.9189 7.45886 21.8862 5.92609 20.7551 4.79066C19.6239 3.65523 18.0497 3.61568 14.9012 3.53657C12.9607 3.48781 11.0393 3.48781 9.09882 3.53656C5.95033 3.61566 4.37608 3.65521 3.24495 4.79065C2.11382 5.92608 2.08114 7.45885 2.01576 10.5244C1.99474 11.5101 1.99475 12.4899 2.01577 13.4756Z\"/></svg>EMAIL</span><span>hello@mykeyy.tech</span><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16.5 7.5L6 18\"/><path d=\"M8 6.18791C8 6.18791 16.0479 5.50949 17.2692 6.73079C18.4906 7.95209 17.812 16 17.812 16\"/></svg></a>",
+      "css": ".ds-contact { display: grid; grid-template-columns: 14rem minmax(0, 1fr) auto; column-gap: 20px; align-items: center; padding: 0.7em 10px; font-size: 1.5rem; color: var(--paper, #fff); background: var(--ink, #061ecf) linear-gradient(var(--paper, #fff), var(--paper, #fff)) right / 0% 100% no-repeat; border-top: 2px solid var(--paper, #fff); border-bottom: 2px solid var(--paper, #fff); text-decoration: none; font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1); } .ds-contact > span:first-child { display: flex; align-items: center; gap: 0.6em; letter-spacing: 0.04em; } .ds-contact:hover, .ds-contact:focus-visible { background-size: 100% 100%; color: var(--ink, #061ecf); outline: none; }"
+    },
+    {
+      "name": "Fact Row",
+      "kind": "custom",
+      "refersTo": "fact-row",
+      "description": "Case-study and About facts: caps mono label in the ledger's first columns, value on --lead, 2px rules.",
+      "html": "<dl class=\"ds-facts\"><div><dt>PROBLEM</dt><dd class=\"ds-say\">What was broken, in one sentence.</dd></div><div><dt>YEAR</dt><dd>2026</dd></div></dl>",
+      "css": ".ds-facts { margin: 0; background: var(--ink, #061ecf); color: var(--paper, #fff); border-top: 2px solid var(--paper, #fff); font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; } .ds-facts > div { display: grid; grid-template-columns: 15rem minmax(0, 1fr); column-gap: 20px; align-items: baseline; padding: 14px 0; border-bottom: 2px solid var(--paper, #fff); } .ds-facts dt { letter-spacing: 0.04em; } .ds-facts dd { margin: 0; } .ds-say { font-family: Geist, system-ui, sans-serif; font-weight: 400; font-size: 1.375rem; line-height: 1.4; max-width: 48ch; }"
+    },
+    {
+      "name": "Inline Prose Link",
+      "kind": "custom",
+      "refersTo": "wipe-link",
+      "description": "The wipe drawn with background layers so it survives line breaks: --p sizes the bar and the blue text fill from the right; 2px underline at rest.",
+      "html": "<p class=\"ds-prose\">MDX is <a class=\"ds-plink\" href=\"#\">Markdown that can hold components like charts</a> and still reads as plain text.</p>",
+      "css": "@property --p { syntax: '<percentage>'; inherits: false; initial-value: 0%; } .ds-prose { background: var(--ink, #061ecf); color: var(--paper, #fff); font-family: Geist, system-ui, sans-serif; font-size: 1.25rem; line-height: 1.6; padding: 16px; max-width: 40ch; } .ds-plink { --p: 0%; color: var(--paper, #fff); text-decoration: none; background: linear-gradient(var(--ink, #061ecf), var(--ink, #061ecf)) right / var(--p) 100% no-repeat, linear-gradient(var(--paper, #fff), var(--paper, #fff)), linear-gradient(var(--paper, #fff), var(--paper, #fff)) right / var(--p) 100% no-repeat, linear-gradient(var(--paper, #fff), var(--paper, #fff)) left bottom / 100% 2px no-repeat; -webkit-background-clip: text, text, border-box, border-box; background-clip: text, text, border-box, border-box; -webkit-text-fill-color: transparent; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: --p 0.4s cubic-bezier(0.22, 1, 0.36, 1); } .ds-plink:is(:hover, :focus-visible, :active) { --p: 100%; outline: none; }"
+    },
+    {
+      "name": "Chart Bars",
+      "kind": "custom",
+      "refersTo": "chart-readout",
+      "description": "Square-ended white bars with the value at the tip; series in line charts differ by line style (solid, dashed 8 6, dotted 0.5 6), never color.",
+      "html": "<figure class=\"ds-chart\"><figcaption>BUILD TIME BY TOOL (SAMPLE)</figcaption><div class=\"ds-bar\"><span>ASTRO</span><i style=\"--f:0.8\"></i><b>8.0s</b></div><div class=\"ds-bar\"><span>VITE</span><i style=\"--f:0.45\"></i><b>4.5s</b></div></figure>",
+      "css": ".ds-chart { background: var(--ink, #061ecf); color: var(--paper, #fff); font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 700; font-size: 0.875rem; padding: 16px; margin: 0; } .ds-chart figcaption { letter-spacing: 0.04em; padding-bottom: 10px; border-bottom: 2px solid var(--paper, #fff); margin-bottom: 14px; } .ds-bar { display: grid; grid-template-columns: 6rem auto 1fr; align-items: center; column-gap: 10px; min-height: 28px; } .ds-bar i { display: block; height: 20px; width: calc(var(--f) * 18rem); background: var(--paper, #fff); } .ds-bar b { font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Blue Ledger",
+    "overview": "The site is a record, not a showcase. One saturated blue field carries white ink and nothing else; the owner's name is set as wide as the column allows, and under it everything made and written runs as one numbered list, newest first, ruled off in 2px white lines. Hierarchy comes from scale and typeface, never from color, boxes, or depth.\n\nThree typefaces split the work cleanly. Geist Mono 900, uppercase, speaks: the name, page names, entry titles, section heads. Geist Mono Bold measures: numbers, dates, columns, filters, navigation, every link label. Geist reads: it appears only where someone settles in for long text (summaries, case-study answers, article prose). Interaction is one motion, the wipe, and a held wipe is the only \"selected\" state on the site.\n\nDensity is calm and dry. Empty space is part of the design and is not filled to balance a page. Pages are long, single-column records whose columns line up on one shared edge, `--lead`, from the ledger down through the contact rows.",
+    "keyCharacteristics": [
+      "Two colors only: blue field, white ink. Translucent white exists only for recessive chart lines.",
+      "Geist Mono 900 for what is named, Geist Mono 700 for what is counted or clicked, Geist for what is read.",
+      "2px white rules between rows; no cards, panels, or outlined boxes.",
+      "One motion, the wipe, for hover, focus, press, and every selected state.",
+      "One vertical edge (`--lead`) shared by ledger titles, contact values, fact values, and prose.",
+      "Square everything: no radii on surfaces."
+    ],
+    "rules": [
+      { "name": "The Two Inks Rule", "body": "Blue and white are the whole palette. White on blue is the default; blue on white appears only where a white fill is the subject (wipe, code, readout). No third color, no gradient, no tinted text.", "section": "colors" },
+      { "name": "The No-Fade Text Rule", "body": "Text is full white. Faint white is a line weight for charts, not a text tone; secondary information is made smaller or moved to mono, not dimmed. Disabled controls (opacity 0.45) are the one exception.", "section": "colors" },
+      { "name": "The Three Jobs Rule", "body": "Geist Mono 900 names, mono counts and links, Geist reads. Geist never labels or links outside running text; mono never carries paragraphs.", "section": "typography" },
+      { "name": "The Full-Width Name Rule", "body": "The name is sized from its container, not a breakpoint, and its ink, not its em box, meets both column edges.", "section": "typography" },
+      { "name": "The One Edge Rule", "body": "Everything that is a \"value\" starts on `--lead`: ledger titles and summaries, contact values (label column `--lead − --col-gap`), case-study and About fact values, case-study prose (margin-left `--lead` from 760px), About prose, and article prose (a two-column grid whose first column holds the sticky contents list). One edge runs down every page.", "section": "layout" },
+      { "name": "The Flat Field Rule", "body": "Nothing floats above the blue. If an element needs emphasis, invert it or make it larger.", "section": "elevation" },
+      { "name": "The Rules Not Boxes Rule", "body": "Content is never enclosed in a bordered or filled card. The one frame on the site is the 2px rule around a case-study cover screenshot, because a picture of a blue page on a blue page would otherwise read as part of this one.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do route every link and button through the wipe, and express every selected state as a held wipe.",
+      "Do start every value column and every block of prose on `--lead`.",
+      "Do separate rows with 2px white rules (`--rule`) and close lists top and bottom.",
+      "Do set names and titles in uppercase Geist Mono 900, data and links in Geist Mono 700 with tabular numbers, and long reading text in Geist.",
+      "Do size the name from its container with a measured `--fit` and the -0.03125em bearing pull-back.",
+      "Do distinguish chart series by line style and give every chart a data table.",
+      "Do use 1.5 stroke for small icons and 2 for the big contact icons."
+    ],
+    "donts": [
+      "Don't add a color, tint, gradient, glow, blur, or shadow; the palette is blue and white.",
+      "Don't wrap content in cards, panels, or outlined boxes; the framed cover screenshot is the only frame.",
+      "Don't round corners on any surface or bar.",
+      "Don't change a link's text color without the bar; the blue label must appear only where the bar has passed.",
+      "Don't set labels, nav, or data in Geist, or paragraphs in mono.",
+      "Don't use `dvh` for layout."
+    ]
+  }
+}

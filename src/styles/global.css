@@ -1,0 +1,426 @@
+/* Fonts are self-hosted (Latin subset, variable) so the site makes no third-party font requests. Both are Vercel's
+   Geist family (SIL Open Font License): Geist Mono at 900 is the display voice and at 700 the labels and data;
+   Geist carries long reading text only. */
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/geist-mono-variable-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/geist-variable-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Two roles, not two colors: --ink is the ground, --paper is everything drawn on it (text, rules, the wipe bar).
+   Each section swaps the pair through data-theme on <html>, and every component follows:
+   blue for the cover, Design, and About; soft black and white for Writing; white with RGB for Projects. */
+
+/* Registered as colors so they can blend: the Design page's color takeover moves the whole page between plate
+   colors with a transition instead of a jump (html.takeover below). */
+@property --ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #061ecf;
+}
+
+@property --paper {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+html.takeover { transition: --ink 0.6s cubic-bezier(0.22, 1, 0.36, 1), --paper 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  html.takeover { transition: none; }
+}
+
+:root {
+  --blue: #061ecf;
+  --ink: var(--blue);
+  --paper: #ffffff;
+  /* Recessive lines (chart gridlines, the empty part of a track): the figure color thinned over the ground */
+  --faint: color-mix(in srgb, var(--paper) 30%, transparent);
+  /* Pure red, green, blue: only on Projects */
+  --rgb: linear-gradient(90deg, #ff1a1a, #00d639 50%, #1a3dff);
+
+  /* Data colors. The site's own colors stay two; charts get a separate categorical palette, in fixed order, per
+     ground, checked with the dataviz validator (OKLCH lightness band, color-blind separation >= 8, 3:1 against the
+     ground). Line styles stay as a second cue, so color is never the only one. On the saturated blue ground, 3:1
+     contrast needs lightness ~0.7, just above the band's 0.67 ceiling: contrast wins there, on purpose. */
+  --series-1: #f2753a;
+  --series-2: #1fb383;
+  --series-3: #d9a300;
+  --series-4: #f0609a;
+  --display: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --text: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Display weight and tracking: Geist Mono at its heaviest, pulled slightly tighter at large sizes */
+  --display-weight: 900;
+  --display-track: -0.035em;
+
+  --pad: clamp(16px, 4vw, 64px);
+  --max: 1760px;
+  --rule: 2px solid var(--paper);
+  /* Mono labels, links, and data: 13px on a phone, about 20px at 1440, 20px max. Set large enough to hold their own
+     under the full-width name. */
+  --label: clamp(0.8125rem, 0.55rem + 0.75vw, 1.25rem);
+  /* Space between the big blocks of a page */
+  --block: clamp(56px, 8vw, 128px);
+  /* Ledger columns (number, year, kind) and the gap between them. --lead is where the title column starts;
+     other full-width lists (the contact rows) start their second column there too, so one edge runs down the page. */
+  --col-gap: clamp(12px, 1.6vw, 28px);
+  --col-no: 3rem;
+  --col-year: 4.25rem;
+  --col-kind: 7.5rem;
+  --lead: calc(var(--col-no) + var(--col-year) + var(--col-kind) + 3 * var(--col-gap));
+
+  /* The hover wipe: one duration and easing shared by the white bar and the blue copy of the label */
+  --wipe: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: dark;
+}
+
+/* Writing: long reading, so off-black and off-white instead of full blue and white */
+:root[data-theme="writing"] {
+  --ink: #111111;
+  --paper: #e6e6e1;
+  --series-1: #4d7cf0;
+  --series-2: #e0662a;
+  --series-3: #1a9e6c;
+  --series-4: #c08a00;
+}
+
+/* Projects: white ground, black ink, color only in the RGB title and numbers */
+:root[data-theme="projects"] {
+  --ink: #ffffff;
+  --paper: #0b0b0b;
+  --series-1: #2350e6;
+  --series-2: #e8590c;
+  --series-3: #12a172;
+  --series-4: #b57d00;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  /* Always keep the scrollbar's space, so locking scroll (the open menu) or a page too short to scroll (the
+     cover) never changes the page width and nothing jumps */
+  scrollbar-gutter: stable;
+  background: var(--ink);
+  color: var(--paper);
+  scrollbar-color: var(--paper) var(--ink);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: var(--label);
+  line-height: 1.4;
+  caret-color: var(--paper);
+  accent-color: var(--paper);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+main { flex: 1; }
+
+::selection { background: var(--paper); color: var(--ink); }
+
+a { color: inherit; }
+img, svg { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
+
+:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+.caps { text-transform: uppercase; letter-spacing: 0.04em; }
+
+.display {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  line-height: 0.88;
+  text-wrap: balance;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* HugeIcons, drawn in one stroke style */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+/* The wipe. Every link and button on the site moves this one way: a white bar sweeps in from the right and the
+   label turns blue exactly where the bar passes, because the blue copy of the label (.ink) is clipped to the same
+   region with the same duration and easing. Holding it (current page, active filter) is the selected state.
+   Never change the text color on its own: it flashes blue before the bar arrives. */
+.wipe {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  color: var(--paper);
+  background: none;
+  border: 0;
+  text-align: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wipe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--wipe);
+}
+
+.wipe > .lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.25em 0.5em;
+}
+
+.wipe > .ink {
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+  pointer-events: none;
+  user-select: none;
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path var(--wipe);
+}
+
+.wipe:is(:hover, :focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"])::before { transform: scaleX(1); }
+.wipe:is(:hover, :focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"]) > .ink { clip-path: inset(0); }
+
+/* Skip link: hidden until a keyboard user tabs to it */
+.skip {
+  position: absolute;
+  top: 8px;
+  left: var(--pad);
+  z-index: 10;
+  padding: 0.4em 0.6em;
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible { transform: none; outline-offset: 2px; }
+
+.wipe:disabled { cursor: default; opacity: 0.45; }
+.wipe:disabled::before { transform: scaleX(0); }
+.wipe:disabled > .ink { clip-path: inset(0 0 0 100%); }
+
+/* Long-form text: case studies and articles. Text runs at a reading measure; charts, code, and tables may run wider. */
+.prose {
+  max-width: 60rem;
+  font-family: var(--text);
+  font-weight: 400;
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.6;
+}
+
+.prose > :where(p, ul, ol, blockquote, h2, h3, h4, hr, .footnotes) { max-width: 68ch; }
+.prose > * + * { margin-top: 1.1em; }
+
+.prose h2 {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-track);
+  text-transform: uppercase;
+  font-size: clamp(2rem, 1.3rem + 2.4vw, 3.5rem);
+  line-height: 0.95;
+  text-wrap: balance;
+  margin-top: 2em;
+  scroll-margin-top: 24px;
+}
+
+.prose h3 {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2.2em;
+  scroll-margin-top: 24px;
+}
+
+.prose :is(h2, h3) + * { margin-top: 0.6em; }
+
+.prose strong { font-weight: 700; }
+
+/* Links inside running text get the same wipe as every other link. A link can break across lines, so it can't
+   carry a second copy of its label; instead the wipe is drawn with backgrounds. One --p sizes, from the right,
+   both the white bar (a border-box layer) and the blue fill of the text (a text-clipped layer over a white one),
+   so the text turns blue exactly where the bar passes. At rest a 2px white line underlines the link. */
+@property --p {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.22em;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .prose a {
+    --p: 0%;
+    text-decoration: none;
+    background:
+      linear-gradient(var(--ink), var(--ink)) right / var(--p) 100% no-repeat,
+      linear-gradient(var(--paper), var(--paper)),
+      linear-gradient(var(--paper), var(--paper)) right / var(--p) 100% no-repeat,
+      linear-gradient(var(--paper), var(--paper)) left bottom / 100% 2px no-repeat;
+    -webkit-background-clip: text, text, border-box, border-box;
+    background-clip: text, text, border-box, border-box;
+    -webkit-text-fill-color: transparent;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: --p var(--wipe);
+  }
+
+  .prose a:is(:hover, :focus-visible, :active) { --p: 100%; outline: none; }
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.82em;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.1em 0.35em;
+}
+
+.prose pre {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.82em;
+  line-height: 1.55;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 1.1em 1.25em;
+  overflow-x: auto;
+  scrollbar-color: var(--ink) var(--paper);
+}
+
+.prose pre code { background: none; padding: 0; font-size: inherit; }
+
+.prose :is(ul, ol) { padding-left: 1.4em; }
+.prose li + li { margin-top: 0.4em; }
+.prose li::marker { font-family: var(--mono); font-weight: 700; }
+
+.prose blockquote {
+  font-size: 1.25em;
+  line-height: 1.45;
+  padding-left: 1em;
+  border-left: var(--rule);
+}
+
+.prose hr { border: 0; border-top: var(--rule); margin-block: 2.5em; }
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.78em;
+  font-variant-numeric: tabular-nums;
+}
+
+.prose th { text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
+.prose :is(th, td) { padding: 0.65em 1em 0.65em 0; border-bottom: var(--rule); vertical-align: top; }
+
+/* Narrow screens: cells keep their values on one line and the table scrolls sideways inside its own box */
+@media (max-width: 759px) {
+  .prose table { display: block; overflow-x: auto; }
+  .prose :is(th, td) { white-space: nowrap; }
+}
+
+.prose img { width: 100%; height: auto; }
+
+/* Footnotes (written as [^1] in Markdown) */
+.prose sup { font-family: var(--mono); font-weight: 700; font-size: 0.7em; line-height: 0; }
+.prose sup a { text-decoration: none; padding-inline: 0.15em; }
+
+/* The footnote's link back to the text. Markdown writes it as a "↩" glyph; the glyph is hidden and the HugeIcons
+   ArrowUp02 is drawn in its place (a mask filled with the current color). Being an icon, the white square and
+   the blue arrow switch together. Screen readers use its label, "Back to reference 1". */
+.prose a[data-footnote-backref] {
+  position: relative;
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  overflow: hidden;
+  vertical-align: -0.25em;
+  color: var(--paper);
+  background: none;
+  -webkit-text-fill-color: transparent;
+}
+
+.prose a[data-footnote-backref]::before {
+  content: "";
+  position: absolute;
+  inset: 0.1em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.5V19'/%3E%3Cpath d='M18 11C18 11 13.5811 5.00001 12 5C10.4188 4.99999 6 11 6 11'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.5V19'/%3E%3Cpath d='M18 11C18 11 13.5811 5.00001 12 5C10.4188 4.99999 6 11 6 11'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.prose a[data-footnote-backref]:is(:hover, :focus-visible) { background: var(--paper); color: var(--ink); }
+.prose .footnotes {
+  margin-top: 3em;
+  padding-top: 1.2em;
+  border-top: var(--rule);
+  font-size: 0.85em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wipe::before, .wipe > .ink, .prose a { transition: none; }
+}

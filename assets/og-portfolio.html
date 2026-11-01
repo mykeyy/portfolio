@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- Source of public/og.png on the portfolio branch: the link-preview card, 1200 x 630.
+     Render it at exactly that size with headless Chrome (see README, "Link preview"). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>myky.cc link preview</title>
+<style>
+  @font-face { font-family: "Geist Mono"; font-weight: 100 900; src: url("../public/fonts/geist-mono-variable-latin.woff2") format("woff2"); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; background: #061ecf; color: #fff; }
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 56px;
+    font-family: "Geist Mono", monospace;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .brand { background: #fff; color: #061ecf; padding: 4px 10px; margin-left: -10px; }
+
+  /* Ink spans the 1088px column: 1088 / 8.4725em of ink (Geist Mono 900, -0.035em tracking) = 128.4px, side bearing pulled back by 0.0313em */
+  h1 {
+    font-family: "Geist Mono", monospace;
+    font-weight: 900;
+    font-size: 128.4px;
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+    white-space: nowrap;
+    margin-left: -0.0313em;
+  }
+
+  .line { display: flex; justify-content: space-between; margin-top: 22px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="brand">myky.cc</span>
+    <span>Projects, research, notes</span>
+  </div>
+  <div>
+    <h1>Mykey Nishikawa</h1>
+    <p class="line"><span>Independent developer and designer</span><span>Philippines, UTC+8</span></p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,426 @@
+---
+// The top bar (brand link and the four-bar menu button) and the menu itself.
+// The menu: the four bars stand up on hover; on click, square cells flicker white and blue until they cover the
+// screen, then each bar flies out of the icon and grows into a tall panel, one per section. Without JavaScript the
+// button is a link to #menu and the panels simply show.
+import { site } from "../site";
+
+interface Props {
+  /** On the cover the brand link is hidden: the name below is the brand */
+  cover?: boolean;
+}
+
+const { cover = false } = Astro.props;
+
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+const sections = [
+  { href: "/projects", label: "Projects" },
+  { href: "/writing", label: "Writing" },
+  { href: "/design", label: "Design" },
+  { href: "/about", label: "About" },
+];
+const current = (href: string) => (path === href || path.startsWith(`${href}/`) ? "page" : undefined);
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    {!cover && <a href="/" class="brand caps">{site.domain}</a>}
+    <a href="#menu" class="menu-btn" role="button" aria-controls="menu" aria-expanded="false" aria-label="Menu" data-menu-btn>
+      <i></i><i></i><i></i><i></i>
+    </a>
+  </div>
+</header>
+
+<nav id="menu" class="menu" aria-label="Sections" data-menu>
+  <canvas class="cells" aria-hidden="true" data-cells></canvas>
+  <ul class="panels">
+    {
+      sections.map((s) => (
+        <li>
+          <a href={s.href} class="panel" aria-current={current(s.href)} data-panel>
+            <span class="word">{s.label}</span>
+            <span class="over" aria-hidden="true">
+              <span class="word">{s.label}</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script>
+  const menu = document.querySelector<HTMLElement>("[data-menu]")!;
+  const btn = document.querySelector<HTMLAnchorElement>("[data-menu-btn]")!;
+  const canvas = menu.querySelector<HTMLCanvasElement>("[data-cells]")!;
+  const panels = [...menu.querySelectorAll<HTMLElement>("[data-panel]")];
+  const bars = [...btn.querySelectorAll<HTMLElement>("i")];
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  // Phones and portrait tablets get the landscape menu: the icon stays flat and the panels are wide bands
+  const flat = matchMedia("(max-width: 759px), (orientation: portrait) and (max-width: 1023px)");
+  const stand = () => !flat.matches && btn.classList.add("up");
+  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+  let open = false;
+  let busy = false;
+
+  const color = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // The cells: an e-ink refresh. A wave of squares spreads out from the menu button; each square flashes the
+  // figure color once (the erase) and then settles on the new state: the ground color when covering, the page
+  // underneath when clearing. One flash per square, so only the thin wave front is ever white.
+  const FLASH = 55;
+  // Opening, the wave spreads out from the menu button; closing is the same wave played backwards, clearing from
+  // the far corner in toward the button as the panels fly home.
+  function cells(cover: boolean, duration = 420) {
+    return new Promise<void>((done) => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = innerWidth, h = innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext("2d")!;
+      ctx.scale(dpr, dpr);
+      const size = Math.max(14, Math.round(Math.min(w, h) / 26));
+      const cols = Math.ceil(w / size), rows = Math.ceil(h / size);
+      const spread = duration - FLASH;
+      // A cell's turn comes with its distance from the button, with a touch of noise so the front is a slightly
+      // ragged edge of squares instead of a clean circle.
+      const b = btn.getBoundingClientRect();
+      const bx = b.left + b.width / 2, by = b.top + b.height / 2;
+      const far = Math.hypot(Math.max(bx, w - bx), Math.max(by, h - by));
+      const starts = Float32Array.from({ length: cols * rows }, (_, i) => {
+        const d = Math.hypot((i % cols) * size + size / 2 - bx, Math.floor(i / cols) * size + size / 2 - by) / far;
+        return ((cover ? d : 1 - d) * 0.9 + Math.random() * 0.1) * spread;
+      });
+      const ink = color("--ink"), paper = color("--paper");
+      const t0 = performance.now();
+
+      const frame = (now: number) => {
+        const t = now - t0;
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < starts.length; i++) {
+          const p = t - starts[i];
+          let fill: string | null;
+          if (p < 0) fill = cover ? null : ink;
+          else if (p < FLASH) fill = paper;
+          else fill = cover ? ink : null;
+          if (!fill) continue;
+          ctx.fillStyle = fill;
+          ctx.fillRect((i % cols) * size, Math.floor(i / cols) * size, size, size);
+        }
+        if (t < duration) requestAnimationFrame(frame);
+        else done();
+      };
+      // Draw the first frame now, so there is never a frame between the class change and the first paint
+      frame(t0);
+    });
+  }
+
+  // Each panel starts as its bar in the icon and grows into place (or shrinks back), slightly staggered.
+  function fly(out: boolean) {
+    const from = bars.map((b) => b.getBoundingClientRect());
+    // The bars become the panels, so the icon leaves as they fly out (and returns once they land back in it)
+    if (out) btn.classList.add("gone");
+    return Promise.all(
+      panels.map((panel, i) => {
+        const to = panel.getBoundingClientRect();
+        const f = from[i];
+        const start = `translate(${f.left - to.left}px, ${f.top - to.top}px) scale(${f.width / to.width}, ${f.height / to.height})`;
+        const frames = out ? [{ transform: start }, { transform: "none" }] : [{ transform: "none" }, { transform: start }];
+        // Home again is the flight out played backwards: same length, mirrored easing, reversed stagger
+        return panel.animate(frames, {
+          duration: 460,
+          delay: out ? i * 45 : (panels.length - 1 - i) * 45,
+          easing: out ? EASE : "cubic-bezier(0.64, 0, 0.78, 0)",
+          fill: "both",
+        }).finished;
+      }),
+    );
+  }
+
+  async function show() {
+    if (open || busy) return;
+    busy = true;
+    open = true;
+    btn.setAttribute("aria-expanded", "true");
+    // The bars stand up while the cells run, so they are upright by the time the panels fly out of them
+    stand();
+    document.documentElement.classList.add("menu-open");
+    menu.classList.add("is-open");
+
+    if (calm.matches) {
+      btn.classList.add("gone");
+      menu.classList.add("landed");
+    } else {
+      // The panels start flying out while the wave is still finishing, so the refresh and the panels overlap
+      menu.classList.add("covering");
+      const wave = cells(true);
+      await new Promise((r) => setTimeout(r, 230));
+      menu.classList.add("flying");
+      const panelsOut = fly(true);
+      await wave;
+      menu.classList.remove("covering");
+      await panelsOut;
+      menu.classList.remove("flying");
+      menu.classList.add("landed");
+    }
+    // Keyboard users land on the current section's panel; a mouse or touch open leaves nothing highlighted
+    if (keyboard) (panels.find((p) => p.getAttribute("aria-current") === "page") ?? panels[0]).focus();
+    busy = false;
+  }
+
+  async function hide() {
+    if (!open || busy) return;
+    busy = true;
+    open = false;
+    btn.setAttribute("aria-expanded", "false");
+    menu.classList.remove("landed");
+
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    if (!calm.matches) {
+      // The opening in reverse: the panels fly home over solid ground first, and only as the last of them lands
+      // does the wave start clearing in toward the icon. The page never shows behind full-size panels.
+      const home = fly(false);
+      await new Promise((r) => setTimeout(r, 420));
+      menu.classList.add("covering", "clearing");
+      const wave = cells(false, 420);
+      await home;
+      btn.classList.remove("gone");
+      await wave;
+    }
+    btn.classList.remove("gone");
+    menu.classList.remove("is-open", "covering", "clearing");
+    panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
+    document.documentElement.classList.remove("menu-open");
+    if (!btn.matches(":hover")) btn.classList.remove("up");
+    if (location.hash === "#menu") history.replaceState(history.state, "", location.pathname + location.search);
+    btn.focus();
+    busy = false;
+  }
+
+  // A click with detail 0 came from the keyboard (Enter or Space)
+  let keyboard = false;
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    keyboard = e.detail === 0;
+    open ? hide() : show();
+  });
+  btn.addEventListener("pointerenter", stand);
+  btn.addEventListener("pointerleave", () => !open && btn.classList.remove("up"));
+  btn.addEventListener("focus", stand);
+  btn.addEventListener("blur", () => !open && btn.classList.remove("up"));
+
+  menu.addEventListener("click", (e) => {
+    if (!(e.target as Element).closest("[data-panel]")) hide();
+  });
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hide();
+  });
+  document.addEventListener("menu:open", () => show());
+
+  // JavaScript takes over from the #menu link
+  menu.classList.add("js");
+  if (location.hash === "#menu") show();
+</script>
+
+<style>
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding-block: clamp(14px, 2vw, 28px);
+  }
+
+  .brand {
+    text-decoration: none;
+    padding: 0.25em 0.5em;
+    margin-left: -0.5em;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  /* The icon: four bars in a square. Lying flat they read as a menu; standing up they preview the four panels. */
+  .menu-btn {
+    --s: clamp(22px, 1.9vw, 30px);
+    position: relative;
+    z-index: 60;
+    display: block;
+    width: var(--s);
+    height: var(--s);
+    margin-left: auto;
+    color: var(--paper);
+    outline-offset: 6px;
+  }
+
+  .menu-btn i {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: calc(var(--s) * 4 / 22);
+    background: currentColor;
+    transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      width 0.3s cubic-bezier(0.22, 1, 0.36, 1), height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .menu-btn i:nth-child(1) { top: 0; }
+  .menu-btn i:nth-child(2) { top: calc(var(--s) * 6 / 22); }
+  .menu-btn i:nth-child(3) { top: calc(var(--s) * 12 / 22); }
+  .menu-btn i:nth-child(4) { top: calc(var(--s) * 18 / 22); }
+
+  /* While the menu is open the bars are the panels; the icon itself is gone. Esc or the background closes it. */
+  .menu-btn.gone { visibility: hidden; }
+
+  .menu-btn.up i {
+    top: 0;
+    width: calc(var(--s) * 4 / 22);
+    height: 100%;
+  }
+
+  .menu-btn.up i:nth-child(2) { left: calc(var(--s) * 6 / 22); }
+  .menu-btn.up i:nth-child(3) { left: calc(var(--s) * 12 / 22); }
+  .menu-btn.up i:nth-child(4) { left: calc(var(--s) * 18 / 22); }
+
+  /* The menu screen */
+  .menu {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+  }
+
+  .menu:target,
+  .menu.is-open { display: flex; }
+  .menu.js:target:not(.is-open) { display: none; }
+
+  /* While the cells run, the page underneath shows through them */
+  .menu.covering { background: transparent; }
+  .menu.covering:not(.flying, .clearing) .panels { visibility: hidden; }
+
+  .cells {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .panels {
+    position: relative;
+    display: flex;
+    gap: clamp(10px, 2.2vw, 36px);
+    list-style: none;
+  }
+
+  /* One panel per section: tall, white, the name set sideways in the display face, reading upward */
+  .panel {
+    --wash: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    width: clamp(64px, 14vw, 220px);
+    height: min(66svh, 600px);
+    padding: clamp(10px, 1.4vw, 22px);
+    background: var(--paper);
+    color: var(--ink);
+    text-decoration: none;
+    transform-origin: 0 0;
+    /* A figure-colored edge, invisible at rest, keeps the panel's shape while the ground-colored fill rises */
+    outline: 2px solid var(--paper);
+    outline-offset: -2px;
+  }
+
+  .panel:focus-visible { outline-width: 4px; outline-offset: -4px; }
+
+  .word {
+    font-family: var(--display);
+    font-weight: var(--display-weight);
+    letter-spacing: var(--display-track);
+    font-size: clamp(1.75rem, 0.8rem + 3.6vw, 4.5rem);
+    line-height: 0.85;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+  }
+
+  /* Labels rise into place once their panel has landed (the word is turned 180deg, so its local top is the
+     visual bottom) */
+  .menu.js .panel > .word { clip-path: inset(0 0 100% 0); transition: clip-path 0.15s ease-in; }
+  .menu.landed .panel > .word { clip-path: inset(0); transition: clip-path 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+  .menu.landed li:nth-child(2) .panel > .word { transition-delay: 0.04s; }
+  .menu.landed li:nth-child(3) .panel > .word { transition-delay: 0.08s; }
+  .menu.landed li:nth-child(4) .panel > .word { transition-delay: 0.12s; }
+
+  /* Hover: the panel's own wipe, rising from the bottom. The ground color fills upward and a full-panel copy of
+     the word, in the figure color, is clipped to exactly the filled part, so the word changes color where the
+     fill passes. */
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--ink);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform var(--wash);
+  }
+
+  .over {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: inherit;
+    color: var(--paper);
+    pointer-events: none;
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path var(--wash);
+  }
+
+  .panel:is(:hover, :focus-visible)::before { transform: scaleY(1); }
+  .menu.landed .panel:is(:hover, :focus-visible) .over { clip-path: inset(0); }
+
+  /* The section you are in: a thin ground-colored frame inside its panel */
+  .panel[aria-current="page"] { box-shadow: inset 0 0 0 clamp(4px, 0.5vw, 8px) var(--paper), inset 0 0 0 calc(clamp(4px, 0.5vw, 8px) + 2px) var(--ink); }
+
+  :global(html.menu-open) { overflow: hidden; }
+
+  /* Phones and portrait tablets: the landscape menu. The icon stays flat, and its four flat bars become four wide
+     bands stacked down the screen, with the words set level at the bottom left. (Matches `flat` in the script.) */
+  @media (max-width: 759px), (orientation: portrait) and (max-width: 1023px) {
+    .panels {
+      flex-direction: column;
+      width: calc(100vw - 2 * var(--pad));
+      gap: clamp(8px, 2svh, 16px);
+    }
+
+    .panel {
+      width: 100%;
+      height: clamp(76px, 15svh, 150px);
+      justify-content: flex-start;
+    }
+
+    .over { justify-content: flex-start; }
+
+    .word {
+      writing-mode: horizontal-tb;
+      transform: none;
+      font-size: clamp(2.5rem, 11vw, 5rem);
+    }
+
+    /* Not turned here, so the rise from the bottom is the top inset */
+    .menu.js .panel > .word { clip-path: inset(100% 0 0 0); }
+    .menu.landed .panel > .word { clip-path: inset(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-btn i, .panel::before, .word, .over { transition: none !important; }
+  }
+</style>

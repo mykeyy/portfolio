@@ -1,0 +1,190 @@
+---
+import { render } from "astro:content";
+import Chart from "../../components/Chart.astro";
+import Icon from "../../components/Icon.astro";
+import Ledger from "../../components/Ledger.astro";
+import Wipe from "../../components/Wipe.astro";
+import Base from "../../layouts/Base.astro";
+import { formatDate, getLedger, getWriting, KIND_LABEL, readingMinutes } from "../../lib/entries";
+
+export async function getStaticPaths() {
+  const writing = await getWriting();
+  return writing.map((piece) => ({ params: { slug: piece.id }, props: { piece } }));
+}
+
+const { piece } = Astro.props;
+const { data } = piece;
+const { Content, headings } = await render(piece);
+
+// Research gets a contents list once it has two or more sections; notes never do.
+// (Markdown adds a hidden "Footnotes" heading when a piece has footnotes; it stays out of the list.)
+const contents = data.kind === "research" ? headings.filter((h) => h.depth === 2 && h.slug !== "footnote-label") : [];
+const hasContents = contents.length > 1;
+
+const href = `/writing/${piece.id}`;
+const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !== href).slice(0, 3);
+---
+
+<Base title={data.title} description={data.summary} type="article" theme="writing">
+  <article class="piece wrap">
+    <Wipe href="/writing" class="back caps"><Icon name="arrow-left" /> Writing</Wipe>
+
+    <h1 class="display title">{data.title}</h1>
+    <p class="summary">{data.summary}</p>
+
+    <dl class="meta caps">
+      <div><dt>Kind</dt><dd>{KIND_LABEL[data.kind]}</dd></div>
+      <div><dt>Published</dt><dd><time datetime={data.date.toISOString()}>{formatDate(data.date)}</time></dd></div>
+      {
+        data.updated && (
+          <div>
+            <dt>Updated</dt>
+            <dd><time datetime={data.updated.toISOString()}>{formatDate(data.updated)}</time></dd>
+          </div>
+        )
+      }
+      <div><dt>Reading</dt><dd>{readingMinutes(piece.body)} min</dd></div>
+    </dl>
+
+    <div class:list={["body", { "has-contents": hasContents }]}>
+      {
+        hasContents && (
+          <nav class="contents caps" aria-label="Contents">
+            <p class="contents-name">Contents</p>
+            <ol>
+              {contents.map((h) => (
+                <li>
+                  <Wipe href={`#${h.slug}`} data-section={h.slug}>
+                    {h.text}
+                  </Wipe>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      <div class="prose">
+        <Content components={{ Chart }} />
+      </div>
+    </div>
+  </article>
+
+  {
+    more.length > 0 && (
+      <section class="more">
+        <h2 class="display wrap">More writing</h2>
+        <Ledger entries={more} label="More writing" />
+      </section>
+    )
+  }
+</Base>
+
+<script>
+  // The contents list holds the wipe on the section being read: the last section whose heading has
+  // passed a line a third of the way down the screen.
+  const pairs = [...document.querySelectorAll<HTMLAnchorElement>(".contents [data-section]")]
+    .map((link) => ({ link, heading: document.getElementById(link.dataset.section ?? "") }))
+    .filter((p): p is { link: HTMLAnchorElement; heading: HTMLElement } => p.heading !== null);
+
+  if (pairs.length) {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = innerHeight / 3;
+      let current = -1;
+      pairs.forEach((p, i) => {
+        if (p.heading.getBoundingClientRect().top <= line) current = i;
+      });
+      pairs.forEach((p, i) =>
+        i === current ? p.link.setAttribute("aria-current", "location") : p.link.removeAttribute("aria-current"),
+      );
+    };
+    addEventListener("scroll", () => (frame ||= requestAnimationFrame(update)), { passive: true });
+    update();
+  }
+</script>
+
+<style>
+  .piece { padding-top: clamp(24px, 4vw, 56px); }
+
+  .back { margin-left: -0.5em; }
+
+  .title {
+    margin-top: clamp(28px, 5vw, 80px);
+    font-size: clamp(3rem, 1.2rem + 6.5vw, 9.5rem);
+    line-height: 0.88;
+    max-width: 16ch;
+  }
+
+  .summary {
+    margin-top: clamp(16px, 2vw, 28px);
+    max-width: 40ch;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1.25rem, 1rem + 0.9vw, 1.875rem);
+    line-height: 1.35;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px clamp(24px, 4vw, 64px);
+    margin-top: clamp(32px, 4vw, 64px);
+    padding-block: 14px;
+    border-top: var(--rule);
+    border-bottom: var(--rule);
+  }
+
+  .meta dd { margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  .body { margin-top: clamp(32px, 5vw, 72px); }
+
+  .contents {
+    margin-bottom: clamp(32px, 4vw, 56px);
+  }
+
+  .contents-name { margin-bottom: 10px; }
+
+  .contents ol {
+    list-style: none;
+    border-top: var(--rule);
+  }
+
+  .contents li { border-bottom: var(--rule); }
+
+  .contents :global(.wipe) {
+    display: flex;
+    width: calc(100% + 1em);
+    margin-inline: -0.5em;
+  }
+
+  .contents :global(.lbl) { padding-block: 0.6em; }
+
+  /* From tablet width up, the text starts on the ledger's title column (--lead), the same edge as the More
+     writing list below it; the contents list fills the ledger's first columns and stays put while you read. */
+  @media (min-width: 760px) {
+    .body {
+      display: grid;
+      grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr);
+      column-gap: var(--col-gap);
+      align-items: start;
+    }
+
+    .body .prose { grid-column: 2; }
+
+    .contents {
+      grid-column: 1;
+      grid-row: 1;
+      position: sticky;
+      top: 24px;
+      margin-bottom: 0;
+    }
+  }
+
+  .more { margin-top: var(--block); }
+
+  .more h2 {
+    font-size: clamp(2.5rem, 1.5rem + 4vw, 6rem);
+    margin-bottom: clamp(16px, 2vw, 28px);
+  }
+</style>

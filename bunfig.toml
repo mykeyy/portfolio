@@ -1,0 +1,2 @@
+# Astro 7 needs Node 22.23+, and Wrangler refuses to run on Bun, so the scripts in package.json pick the runtime
+# per tool: `bun --bun astro ...` runs Astro on Bun, plain `wrangler ...` runs Wrangler on Node.
