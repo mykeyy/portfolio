@@ -117,6 +117,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   // Each panel starts as its bar in the icon and grows into place (or shrinks back), slightly staggered.
   function fly(out: boolean) {
     const from = bars.map((b) => b.getBoundingClientRect());
+    // The bars become the panels, so the icon leaves as they fly out (and returns once they land back in it)
+    if (out) btn.classList.add("gone");
     return Promise.all(
       panels.map((panel, i) => {
         const to = panel.getBoundingClientRect();
@@ -144,6 +146,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     menu.classList.add("is-open");
 
     if (calm.matches) {
+      btn.classList.add("gone");
       menu.classList.add("landed");
     } else {
       // The panels start flying out while the wave is still finishing, so the refresh and the panels overlap
@@ -171,11 +174,13 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
     if (!calm.matches) {
       await fly(false);
+      btn.classList.remove("gone");
       menu.classList.add("covering", "clearing");
       await cells(false, 340);
       menu.classList.remove("covering", "clearing");
     }
     panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
+    btn.classList.remove("gone");
     menu.classList.remove("is-open");
     document.documentElement.classList.remove("menu-open");
     if (!btn.matches(":hover")) btn.classList.remove("up");
@@ -251,6 +256,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   .menu-btn i:nth-child(3) { top: calc(var(--s) * 12 / 22); }
   .menu-btn i:nth-child(4) { top: calc(var(--s) * 18 / 22); }
 
+  /* While the menu is open the bars are the panels; the icon itself is gone. Esc or the background closes it. */
+  .menu-btn.gone { visibility: hidden; }
+
   .menu-btn.up i {
     top: 0;
     width: calc(var(--s) * 4 / 22);
@@ -311,8 +319,12 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     color: var(--ink);
     text-decoration: none;
     transform-origin: 0 0;
-    outline-offset: 6px;
+    /* A figure-colored edge, invisible at rest, keeps the panel's shape while the ground-colored fill rises */
+    outline: 2px solid var(--paper);
+    outline-offset: -2px;
   }
+
+  .panel:focus-visible { outline-width: 4px; outline-offset: -4px; }
 
   .word {
     font-family: var(--display);
