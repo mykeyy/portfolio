@@ -91,9 +91,27 @@ The case study, in Markdown.
 
 ## Add a design piece
 
-One Markdown file per piece in [](src/content/designs), with its images next to it. The site stays blue and white; each piece sits on its own **plate** in a color you pick from the work, and the whole page takes on that color while the piece is in view.
+One Markdown file per piece in [`src/content/designs`](src/content/designs), with its images next to it. The site stays blue and white; each piece sits on its own **plate** in a color you pick from the work, and the whole page takes on that color while the piece is in view.
 
-\
+```md
+---
+title: Client logo
+summary: One line on what it is.
+date: 2026-11-01
+kind: logo                 # web (browser frame), logo (specimen), or visual (the image as is)
+size: half                 # full or half; two halves sit side by side
+plate: "#0b0b0b"           # the color the work sits on, as a 6-digit hex
+mark: ./logo.png           # logo only; web and visual pieces use image: ./shot.png
+markInverse: ./logo-inverse.png
+colors:
+  - { name: Blue, hex: "#061ecf" }
+typeface: Geist Mono Bold
+url: https://example.com   # web only, shown in the browser bar
+alt: What the image shows
+tools: [Figma]
+---
+```
+
 Text and frames on a plate turn black or white on their own, whichever reads better on the color you picked.
 
 <br>
@@ -138,6 +156,7 @@ Charts need no import inside `.mdx`:
 | `source` | Where the numbers come from. |
 | `sample` | Labels the numbers as made up. Remove it once they're real. |
 | `unit` | Added to every value: `%`, ` KB`, ` ms`. |
+| `tone` (on a bar) | 1 to 4: which data color the bar takes. Use it to pick out the bar the story is about. |
 | `xLabel` | Names the first column of the data table. |
 | `min`, `max` | Fix the y axis range on a line chart. |
 
