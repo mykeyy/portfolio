@@ -163,7 +163,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
       menu.classList.remove("flying");
       menu.classList.add("landed");
     }
-    panels.find((p) => p.getAttribute("aria-current") === "page")?.focus() ?? panels[0].focus();
+    // Keyboard users land on the current section's panel; a mouse or touch open leaves nothing highlighted
+    if (keyboard) (panels.find((p) => p.getAttribute("aria-current") === "page") ?? panels[0]).focus();
     busy = false;
   }
 
@@ -174,11 +175,16 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     btn.setAttribute("aria-expanded", "false");
     menu.classList.remove("landed");
 
+    (document.activeElement as HTMLElement | null)?.blur();
+
     if (!calm.matches) {
-      // The panels fly home while the wave clears in toward the icon; both arrive together and the icon returns
+      // The opening in reverse: the panels fly home over solid ground first, and only as the last of them lands
+      // does the wave start clearing in toward the icon. The page never shows behind full-size panels.
+      const home = fly(false);
+      await new Promise((r) => setTimeout(r, 420));
       menu.classList.add("covering", "clearing");
-      const wave = cells(false, 600);
-      await fly(false);
+      const wave = cells(false, 420);
+      await home;
       btn.classList.remove("gone");
       await wave;
     }
@@ -192,8 +198,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     busy = false;
   }
 
+  // A click with detail 0 came from the keyboard (Enter or Space)
+  let keyboard = false;
   btn.addEventListener("click", (e) => {
     e.preventDefault();
+    keyboard = e.detail === 0;
     open ? hide() : show();
   });
   btn.addEventListener("pointerenter", stand);
