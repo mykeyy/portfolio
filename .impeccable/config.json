@@ -65,6 +65,24 @@
         ],
         "createdAt": "2026-11-01T01:57:40.916Z",
         "reason": "user confirmed: asked for the word PROJECTS itself in an RGB gradient (2026-11-01 brief with artboards)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist mono",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T06:47:14.489Z",
+        "reason": "user confirmed: picked Geist Mono Black from a side-by-side of bold monos (2026-11-01)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          "src/styles/global.css"
+        ],
+        "createdAt": "2026-11-01T06:47:14.873Z",
+        "reason": "user confirmed: asked for Vercel's open-source font; Geist is Geist Mono's sibling for reading text (2026-11-01)"
       }
     ]
   }

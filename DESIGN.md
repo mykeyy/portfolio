@@ -7,39 +7,39 @@ colors:
   faint: "rgb(255 255 255 / 0.3)"
 typography:
   display:
-    fontFamily: "Anton, Impact, 'Arial Narrow', sans-serif"
+    fontFamily: "'Geist Mono', ui-monospace, monospace"
     fontSize: "calc(100cqw / var(--fit))"
-    fontWeight: 400
+    fontWeight: 900
     lineHeight: 0.84
-    letterSpacing: "0em"
+    letterSpacing: "-0.035em"
   headline:
-    fontFamily: "Anton, Impact, 'Arial Narrow', sans-serif"
+    fontFamily: "'Geist Mono', ui-monospace, monospace"
     fontSize: "clamp(4.5rem, 1.5rem + 11vw, 14rem)"
-    fontWeight: 400
+    fontWeight: 900
     lineHeight: 0.84
   title:
-    fontFamily: "Anton, Impact, 'Arial Narrow', sans-serif"
-    fontSize: "clamp(1.75rem, 0.9rem + 2.7vw, 3.75rem)"
-    fontWeight: 400
+    fontFamily: "'Geist Mono', ui-monospace, monospace"
+    fontSize: "clamp(1.375rem, 0.75rem + 2vw, 2.75rem)"
+    fontWeight: 900
     lineHeight: 0.95
   section:
-    fontFamily: "Anton, Impact, 'Arial Narrow', sans-serif"
+    fontFamily: "'Geist Mono', ui-monospace, monospace"
     fontSize: "clamp(2rem, 1.3rem + 2.4vw, 3.5rem)"
-    fontWeight: 400
+    fontWeight: 900
     lineHeight: 0.95
   label:
-    fontFamily: "'Roboto Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace"
+    fontFamily: "'Geist Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace"
     fontSize: "clamp(0.8125rem, 0.55rem + 0.75vw, 1.25rem)"
     fontWeight: 700
     lineHeight: 1.4
     letterSpacing: "0.04em"
   body:
-    fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: "Geist, system-ui, -apple-system, 'Segoe UI', sans-serif"
     fontSize: "clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)"
     fontWeight: 400
     lineHeight: 1.6
   summary:
-    fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontFamily: "Geist, system-ui, -apple-system, 'Segoe UI', sans-serif"
     fontSize: "clamp(0.9375rem, 0.88rem + 0.2vw, 1.0625rem)"
     fontWeight: 400
     lineHeight: 1.45
@@ -100,13 +100,13 @@ components:
 
 The site is a record, not a showcase. One saturated blue field carries white ink and nothing else; the owner's name is set as wide as the column allows, and under it everything made and written runs as one numbered list, newest first, ruled off in 2px white lines. Hierarchy comes from scale and typeface, never from color, boxes, or depth.
 
-Three typefaces split the work cleanly. Anton, uppercase, speaks: the name, page names, entry titles, section heads. Roboto Mono Bold measures: numbers, dates, columns, filters, navigation, every link label. Roboto reads: it appears only where someone settles in for long text (summaries, case-study answers, article prose). Interaction is one motion, the wipe, and a held wipe is the only "selected" state on the site.
+Three typefaces split the work cleanly. Geist Mono 900, uppercase, speaks: the name, page names, entry titles, section heads. Geist Mono Bold measures: numbers, dates, columns, filters, navigation, every link label. Geist reads: it appears only where someone settles in for long text (summaries, case-study answers, article prose). Interaction is one motion, the wipe, and a held wipe is the only "selected" state on the site.
 
 Density is calm and dry. Empty space is part of the design and is not filled to balance a page. Pages are long, single-column records whose columns line up on one shared edge, `--lead`, from the ledger down through the contact rows.
 
 **Key Characteristics:**
 - Two colors only: blue field, white ink. Translucent white exists only for recessive chart lines.
-- Anton for what is named, Roboto Mono 700 for what is counted or clicked, Roboto for what is read.
+- Geist Mono 900 for what is named, Geist Mono 700 for what is counted or clicked, Geist for what is read.
 - 2px white rules between rows; no cards, panels, or outlined boxes.
 - One motion, the wipe, for hover, focus, press, and every selected state.
 - One vertical edge (`--lead`) shared by ledger titles, contact values, fact values, and prose.
@@ -130,23 +130,23 @@ A single-hue world: one deep electric blue and white, used as field and ink, wit
 
 ## Typography
 
-**Display Font:** Anton (with Impact, Arial Narrow)
-**Body Font:** Roboto 400/700 + 400 italic (with system-ui)
-**Label/Mono Font:** Roboto Mono 700 (with ui-monospace, SFMono-Regular, Consolas)
+**Display Font:** Geist Mono 900 (with Impact, Arial Narrow)
+**Body Font:** Geist 400/700 + 400 italic (with system-ui)
+**Label/Mono Font:** Geist Mono 700 (with ui-monospace, SFMono-Regular, Consolas)
 
-**Character:** A condensed poster face shouting in capitals against a bold monospace that keeps the books. All three faces are self-hosted Latin woff2; Anton and Roboto Mono are preloaded.
+**Character:** A condensed poster face shouting in capitals against a bold monospace that keeps the books. All three faces are self-hosted Latin woff2; Geist Mono 900 and Geist Mono are preloaded.
 
 ### Hierarchy
-- **Display** (Anton 400, uppercase, fit to the column, line-height 0.84): the owner's name on home only. Its ink spans the column edge to edge: font-size is `100cqw / --fit`, where `--fit` is the widest line's ink width in em (6.764 for MYKEY NISHIKAWA on one line; 4.007 for NISHIKAWA when the container is 520px or narrower and the name breaks after the first name, line-height 0.92). A `-0.03125em` left margin pulls Anton's side bearing back to the column edge. Remeasure `--fit` with canvas `measureText` if the name changes.
-- **Headline** (Anton 400, uppercase, clamp(4.5rem → 14rem), 0.84): index page names (Projects, Writing, About). Case-study titles run clamp(3.25rem → 11rem) at 0.86, max 14ch; article titles clamp(3rem → 9.5rem) at 0.88, max 16ch; Contact and "More ..." heads clamp(2.5–3rem → 6–7.5rem); 404 up to 30rem.
-- **Title** (Anton 400, uppercase, clamp(1.75rem → 3.75rem), 0.95, balanced): ledger entry titles.
-- **Section** (Anton 400, uppercase, clamp(2rem → 3.5rem), 0.95): h2 inside prose. Prose h3 is mono 700 caps at 0.85em, 0.04em tracking.
-- **Body** (Roboto 400, clamp(1.0625rem → 1.25rem), 1.6, 68ch measure): article and case-study prose. Lead summaries under page titles are Roboto at clamp(1.25rem → 2rem), 1.3–1.35, 34–40ch.
-- **Summary** (Roboto 400, clamp(0.9375rem → 1.0625rem), 1.45, 60ch): the one line under each ledger title.
-- **Label** (Roboto Mono 700, `--label` 13px → 20px, 1.4; caps at 0.04em tracking): the site's base text. Nav, filters, column heads, numbers, years, kinds, dates, link labels, contact values, chart text (a smaller clamp(0.75rem → 0.875rem)). Numbers are tabular.
+- **Display** (Geist Mono 900 400, uppercase, fit to the column, line-height 0.84): the owner's name on home only. Its ink spans the column edge to edge: font-size is `100cqw / --fit`, where `--fit` is the widest line's ink width in em (6.764 for MYKEY NISHIKAWA on one line; 4.007 for NISHIKAWA when the container is 520px or narrower and the name breaks after the first name, line-height 0.92). A `-0.03125em` left margin pulls Geist Mono 900's side bearing back to the column edge. Remeasure `--fit` with canvas `measureText` if the name changes.
+- **Headline** (Geist Mono 900 400, uppercase, clamp(4.5rem → 14rem), 0.84): index page names (Projects, Writing, About). Case-study titles run clamp(3.25rem → 11rem) at 0.86, max 14ch; article titles clamp(3rem → 9.5rem) at 0.88, max 16ch; Contact and "More ..." heads clamp(2.5–3rem → 6–7.5rem); 404 up to 30rem.
+- **Title** (Geist Mono 900 400, uppercase, clamp(1.75rem → 3.75rem), 0.95, balanced): ledger entry titles.
+- **Section** (Geist Mono 900 400, uppercase, clamp(2rem → 3.5rem), 0.95): h2 inside prose. Prose h3 is mono 700 caps at 0.85em, 0.04em tracking.
+- **Body** (Geist 400, clamp(1.0625rem → 1.25rem), 1.6, 68ch measure): article and case-study prose. Lead summaries under page titles are Geist at clamp(1.25rem → 2rem), 1.3–1.35, 34–40ch.
+- **Summary** (Geist 400, clamp(0.9375rem → 1.0625rem), 1.45, 60ch): the one line under each ledger title.
+- **Label** (Geist Mono 700, `--label` 13px → 20px, 1.4; caps at 0.04em tracking): the site's base text. Nav, filters, column heads, numbers, years, kinds, dates, link labels, contact values, chart text (a smaller clamp(0.75rem → 0.875rem)). Numbers are tabular.
 
 ### Named Rules
-**The Three Jobs Rule.** Anton names, mono counts and links, Roboto reads. Roboto never labels or links outside running text; mono never carries paragraphs.
+**The Three Jobs Rule.** Geist Mono 900 names, mono counts and links, Geist reads. Geist never labels or links outside running text; mono never carries paragraphs.
 
 **The Full-Width Name Rule.** The name is sized from its container, not a breakpoint, and its ink, not its em box, meets both column edges.
 
@@ -197,14 +197,14 @@ Header row: `myky.cc` brand left, Projects / Writing / About / Contact right, al
 The signature component: a numbered record of projects, research, and notes, numbered oldest = 01 and listed newest first.
 - **Filters:** a row of wipe buttons (All, Projects, Research, Notes, each with a zero-padded count) above the list; the pressed filter is held, empty kinds are disabled, and the choice persists in `?kind=`.
 - **Column head:** caps mono No. / Year / Kind / Title over a 2px rule.
-- **Row:** one hanging wipe link per entry. Mono number, year, kind; Anton title with its Roboto summary beneath on the title column; mono "View" or "Read" plus a right arrow at the end. Rows are separated by 2px rules.
+- **Row:** one hanging wipe link per entry. Mono number, year, kind; Geist Mono 900 title with its Geist summary beneath on the title column; mono "View" or "Read" plus a right arrow at the end. Rows are separated by 2px rules.
 - **Compact (≤759px):** described in Layout.
 
 ### Contact Rows
-Close every page under an Anton "Contact" head. Hanging wipe rows between 2px rules: icon (stroke 2) and caps service name, the value on `--lead`, an up-right arrow at the end. Footer base line: © year and name left, eye icon and unique-visitor count right.
+Close every page under an Geist Mono 900 "Contact" head. Hanging wipe rows between 2px rules: icon (stroke 2) and caps service name, the value on `--lead`, an up-right arrow at the end. Footer base line: © year and name left, eye icon and unique-visitor count right.
 
 ### Fact Rows
-Case-study and About facts as a definition list in 2px-ruled rows: caps mono label in the ledger's first columns, value on `--lead`. Case studies always open with Problem, Role, Outcome (answers in Roboto, 48ch) before Year, Stack, and Links.
+Case-study and About facts as a definition list in 2px-ruled rows: caps mono label in the ledger's first columns, value on `--lead`. Case studies always open with Problem, Role, Outcome (answers in Geist, 48ch) before Year, Stack, and Links.
 
 ### Charts
 Build-time SVG figures for research. With two colors available, up to three series are told apart by line style (solid, dashed `8 6`, dotted `0.5 6`), named in a legend and at line ends. Marks are 2px white strokes; gridlines are faint, the baseline full white. Bars are white, 20px tall, square-ended, with the value at the tip. Hover or arrow keys show a 1px crosshair, ringed dots, and a white readout with blue text. Every chart keeps its numbers in a "Show the data" table and carries a source line.
@@ -221,7 +221,7 @@ HugeIcons only, inline SVG paths, round caps and joins. Stroke 1.5 at 1.15em for
 - **Do** route every link and button through the wipe, and express every selected state as a held wipe.
 - **Do** start every value column and every block of prose on `--lead`.
 - **Do** separate rows with 2px white rules (`--rule`) and close lists top and bottom.
-- **Do** set names and titles in uppercase Anton, data and links in Roboto Mono 700 with tabular numbers, and long reading text in Roboto.
+- **Do** set names and titles in uppercase Geist Mono 900, data and links in Geist Mono 700 with tabular numbers, and long reading text in Geist.
 - **Do** size the name from its container with a measured `--fit` and the -0.03125em bearing pull-back.
 - **Do** distinguish chart series by line style and give every chart a data table.
 - **Do** use 1.5 stroke for small icons and 2 for the big contact icons.
@@ -231,5 +231,5 @@ HugeIcons only, inline SVG paths, round caps and joins. Stroke 1.5 at 1.15em for
 - **Don't** wrap content in cards, panels, or outlined boxes; the framed cover screenshot is the only frame.
 - **Don't** round corners on any surface or bar.
 - **Don't** change a link's text color without the bar; the blue label must appear only where the bar has passed.
-- **Don't** set labels, nav, or data in Roboto, or paragraphs in mono.
+- **Don't** set labels, nav, or data in Geist, or paragraphs in mono.
 - **Don't** use `dvh` for layout.
