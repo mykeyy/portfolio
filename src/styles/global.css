@@ -91,6 +91,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
+  /* Always keep the scrollbar's space, so locking scroll (the open menu) or a page too short to scroll (the
+     cover) never changes the page width and nothing jumps */
+  scrollbar-gutter: stable;
   background: var(--ink);
   color: var(--paper);
   scrollbar-color: var(--paper) var(--ink);

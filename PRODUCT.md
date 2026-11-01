@@ -5,7 +5,7 @@ myky.cc, the portfolio of Mykey Nishikawa, independent developer and designer in
 
 ## Purpose
 Show who Mykey is and what Mykey makes, designs, and writes, and make it easy to get in touch.
-- **Cover (home):** one screen, the name and one line. The four-bar menu opens the site: a glitch of square cells spreads from the icon, then four panels (desktop) or four bands (phones and portrait tablets) lead to the sections. Closing, the panels fly back into the icon and the refresh rises from the bottom to reveal the page again. Scrolling never opens it.
+- **Cover (home):** one screen, the name and one line. The four-bar menu opens the site: a glitch of square cells spreads from the icon, then four panels (desktop) or four bands (phones and portrait tablets) lead to the sections. Closing plays it backwards: the panels fly home into the icon while the refresh clears in toward it. Scrolling never opens it.
 - **Projects:** a few case studies, each opening with the problem, the role, and the outcome before the story. White page, the title in RGB.
 - **Writing:** research (long pieces with charts, tables, sources, and footnotes; future LLM benchmarks belong here) and notes. Soft black and white, for long reading.
 - **Design:** UI and visual design pieces, shown large.

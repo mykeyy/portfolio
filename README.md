@@ -22,7 +22,7 @@ This is a beta: it runs on your machine and is not deployed yet. Entries marked 
 
 | Page | What it does |
 |---|---|
-| **Cover** `/` | My name across one screen and the four-bar menu. Click it and an e-ink style refresh spreads from the icon (each square flashes white, then settles blue) while the bars fly out into four panels: Projects, Writing, Design, About. On phones they are four wide bands. Closing, the panels fly back into the icon and the refresh rises from the bottom to reveal the page. |
+| **Cover** `/` | My name across one screen and the four-bar menu. Click it and an e-ink style refresh spreads from the icon (each square flashes white, then settles blue) while the bars fly out into four panels: Projects, Writing, Design, About. On phones they are four wide bands. Closing plays it backwards: the panels fly home into the icon while the refresh clears in toward it. |
 | **Projects** `/projects` | White page, RGB title. Each case study opens with the problem, my role, and the outcome, before the story. |
 | **Writing** `/writing` | Soft black and white. Research and notes, filterable (`/writing?kind=research`). Research gets a contents list that stays beside the text, charts, tables, and footnotes. |
 | **Design** `/design` | Design pieces, shown big, from `src/content/designs`. |

@@ -69,7 +69,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   // figure color once (the erase) and then settles on the new state: the ground color when covering, the page
   // underneath when clearing. One flash per square, so only the thin wave front is ever white.
   const FLASH = 55;
-  // Opening, the wave spreads out from the menu button; closing, it rises from the bottom of the screen to the top.
+  // Opening, the wave spreads out from the menu button; closing is the same wave played backwards, clearing from
+  // the far corner in toward the button as the panels fly home.
   function cells(cover: boolean, duration = 420) {
     return new Promise<void>((done) => {
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -87,9 +88,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
       const bx = b.left + b.width / 2, by = b.top + b.height / 2;
       const far = Math.hypot(Math.max(bx, w - bx), Math.max(by, h - by));
       const starts = Float32Array.from({ length: cols * rows }, (_, i) => {
-        const y = Math.floor(i / cols) * size + size / 2;
-        const d = cover ? Math.hypot((i % cols) * size + size / 2 - bx, y - by) / far : (h - y) / h;
-        return (d * 0.9 + Math.random() * 0.1) * spread;
+        const d = Math.hypot((i % cols) * size + size / 2 - bx, Math.floor(i / cols) * size + size / 2 - by) / far;
+        return ((cover ? d : 1 - d) * 0.9 + Math.random() * 0.1) * spread;
       });
       const ink = color("--ink"), paper = color("--paper");
       const t0 = performance.now();
@@ -110,7 +110,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
         if (t < duration) requestAnimationFrame(frame);
         else done();
       };
-      requestAnimationFrame(frame);
+      // Draw the first frame now, so there is never a frame between the class change and the first paint
+      frame(t0);
     });
   }
 
@@ -125,10 +126,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
         const f = from[i];
         const start = `translate(${f.left - to.left}px, ${f.top - to.top}px) scale(${f.width / to.width}, ${f.height / to.height})`;
         const frames = out ? [{ transform: start }, { transform: "none" }] : [{ transform: "none" }, { transform: start }];
+        // Home again is the flight out played backwards: same length, mirrored easing, reversed stagger
         return panel.animate(frames, {
-          duration: out ? 460 : 240,
-          delay: out ? i * 45 : (panels.length - 1 - i) * 25,
-          easing: out ? EASE : "cubic-bezier(0.55, 0, 0.75, 0)",
+          duration: 460,
+          delay: out ? i * 45 : (panels.length - 1 - i) * 45,
+          easing: out ? EASE : "cubic-bezier(0.64, 0, 0.78, 0)",
           fill: "both",
         }).finished;
       }),
@@ -173,15 +175,16 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     menu.classList.remove("landed");
 
     if (!calm.matches) {
+      // The panels fly home while the wave clears in toward the icon; both arrive together and the icon returns
+      menu.classList.add("covering", "clearing");
+      const wave = cells(false, 600);
       await fly(false);
       btn.classList.remove("gone");
-      menu.classList.add("covering", "clearing");
-      await cells(false, 340);
-      menu.classList.remove("covering", "clearing");
+      await wave;
     }
-    panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
     btn.classList.remove("gone");
-    menu.classList.remove("is-open");
+    menu.classList.remove("is-open", "covering", "clearing");
+    panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
     document.documentElement.classList.remove("menu-open");
     if (!btn.matches(":hover")) btn.classList.remove("up");
     if (location.hash === "#menu") history.replaceState(history.state, "", location.pathname + location.search);
@@ -286,8 +289,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   /* While the cells run, the page underneath shows through them */
   .menu.covering { background: transparent; }
-  .menu.covering:not(.flying) .panels { visibility: hidden; }
-  .menu.clearing .panels { visibility: hidden; }
+  .menu.covering:not(.flying, .clearing) .panels { visibility: hidden; }
 
   .cells {
     position: absolute;
@@ -338,7 +340,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   /* Labels rise into place once their panel has landed (the word is turned 180deg, so its local top is the
      visual bottom) */
-  .menu.js .panel > .word { clip-path: inset(0 0 100% 0); }
+  .menu.js .panel > .word { clip-path: inset(0 0 100% 0); transition: clip-path 0.15s ease-in; }
   .menu.landed .panel > .word { clip-path: inset(0); transition: clip-path 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
   .menu.landed li:nth-child(2) .panel > .word { transition-delay: 0.04s; }
   .menu.landed li:nth-child(3) .panel > .word { transition-delay: 0.08s; }
