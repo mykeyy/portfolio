@@ -37,19 +37,39 @@ const writing = defineCollection({
   }),
 });
 
-// One file per design piece in src/content/designs, with its image next to it. The Design page shows them big.
+// One file per design piece in src/content/designs, with its images next to it. The site stays two colors; each
+// piece sits on its own plate, in a color you pick from the work, and is shown the way its discipline expects:
+// websites in a browser frame, logos as a specimen, everything else as is.
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a 6-digit hex color, like #e9e7e1");
 const designs = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/designs" }),
   schema: ({ image }) =>
-    z.object({
-      title: z.string(),
-      summary: z.string(),
-      date: z.coerce.date(),
-      image: image(),
-      alt: z.string(),
-      tools: z.array(z.string()).default([]),
-      draft: z.boolean().default(false),
-    }),
+    z
+      .object({
+        title: z.string(),
+        summary: z.string(),
+        date: z.coerce.date(),
+        /** web: screenshot in a browser frame. logo: specimen. visual: the image as is. */
+        kind: z.enum(["web", "logo", "visual"]).default("visual"),
+        /** full: the whole column. half: one of two side by side (from tablet width up). */
+        size: z.enum(["full", "half"]).default("full"),
+        /** The color the work sits on. The page takes on this color while the piece is in view. */
+        plate: hex,
+        image: image().optional(),
+        alt: z.string(),
+        /** web: the address shown in the browser bar */
+        url: z.url().optional(),
+        /** logo: the mark, an optional inverse version, its colors, and its typeface */
+        mark: image().optional(),
+        markInverse: image().optional(),
+        colors: z.array(z.object({ name: z.string(), hex })).default([]),
+        typeface: z.string().optional(),
+        tools: z.array(z.string()).default([]),
+        draft: z.boolean().default(false),
+      })
+      .refine((d) => (d.kind === "logo" ? Boolean(d.mark) : Boolean(d.image)), {
+        message: "A logo needs `mark`; web and visual pieces need `image`.",
+      }),
 });
 
 export const collections = { projects, writing, designs };

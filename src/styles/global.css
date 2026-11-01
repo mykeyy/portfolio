@@ -22,6 +22,27 @@
 /* Two roles, not two colors: --ink is the ground, --paper is everything drawn on it (text, rules, the wipe bar).
    Each section swaps the pair through data-theme on <html>, and every component follows:
    blue for the cover, Design, and About; soft black and white for Writing; white with RGB for Projects. */
+
+/* Registered as colors so they can blend: the Design page's color takeover moves the whole page between plate
+   colors with a transition instead of a jump (html.takeover below). */
+@property --ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #061ecf;
+}
+
+@property --paper {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+html.takeover { transition: --ink 0.6s cubic-bezier(0.22, 1, 0.36, 1), --paper 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  html.takeover { transition: none; }
+}
+
 :root {
   --blue: #061ecf;
   --ink: var(--blue);
@@ -30,6 +51,15 @@
   --faint: color-mix(in srgb, var(--paper) 30%, transparent);
   /* Pure red, green, blue: only on Projects */
   --rgb: linear-gradient(90deg, #ff1a1a, #00d639 50%, #1a3dff);
+
+  /* Data colors. The site's own colors stay two; charts get a separate categorical palette, in fixed order, per
+     ground, checked with the dataviz validator (OKLCH lightness band, color-blind separation >= 8, 3:1 against the
+     ground). Line styles stay as a second cue, so color is never the only one. On the saturated blue ground, 3:1
+     contrast needs lightness ~0.7, just above the band's 0.67 ceiling: contrast wins there, on purpose. */
+  --series-1: #f2753a;
+  --series-2: #1fb383;
+  --series-3: #d9a300;
+  --series-4: #f0609a;
   --display: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --text: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -60,10 +90,25 @@
 }
 
 /* Writing: long reading, so off-black and off-white instead of full blue and white */
-:root[data-theme="writing"] { --ink: #111111; --paper: #e6e6e1; }
+:root[data-theme="writing"] {
+  --ink: #111111;
+  --paper: #e6e6e1;
+  --series-1: #4d7cf0;
+  --series-2: #e0662a;
+  --series-3: #1a9e6c;
+  --series-4: #c08a00;
+}
 
 /* Projects: white ground, black ink, color only in the RGB title and numbers */
-:root[data-theme="projects"] { --ink: #ffffff; --paper: #0b0b0b; color-scheme: light; }
+:root[data-theme="projects"] {
+  --ink: #ffffff;
+  --paper: #0b0b0b;
+  --series-1: #2350e6;
+  --series-2: #e8590c;
+  --series-3: #12a172;
+  --series-4: #b57d00;
+  color-scheme: light;
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 

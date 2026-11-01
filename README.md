@@ -89,6 +89,15 @@ The case study, in Markdown.
 
 <br>
 
+## Add a design piece
+
+One Markdown file per piece in [](src/content/designs), with its images next to it. The site stays blue and white; each piece sits on its own **plate** in a color you pick from the work, and the whole page takes on that color while the piece is in view.
+
+\
+Text and frames on a plate turn black or white on their own, whichever reads better on the color you picked.
+
+<br>
+
 ## Write something
 
 One file per piece in [`src/content/writing`](src/content/writing). Use `kind: research` for long pieces and `kind: note` for short ones. Use `.mdx` when the piece has charts.

@@ -18,7 +18,7 @@ A piece with two or more `##` sections gets a contents list. On a wide screen it
 
 Write `<Chart>` anywhere in an `.mdx` file. It is drawn when the site builds, so it costs the reader no JavaScript to see, and every chart keeps its numbers in a table under **Show the data**.
 
-A line chart takes up to three series. The site has two colors, so lines are told apart by style: solid, dashed, dotted. Hover or tap the chart to read each point, or tab to it and use the arrow keys.
+A line chart takes up to three series. Each gets its own data color, tested to stay apart for color-blind readers, and its own line style (solid, dashed, dotted), so color is never the only cue. The site itself stays two colors; only data gets more. Hover or tap the chart to read each point, or tab to it and use the arrow keys.
 
 <Chart
   kind="line"
@@ -33,7 +33,7 @@ A line chart takes up to three series. The site has two colors, so lines are tol
   ]}
 />
 
-A bar chart compares amounts, with each value at the tip of its bar. These numbers are real: the files the coming-soon page downloads.
+A bar chart compares amounts, with each value at the tip of its bar. Give one bar `tone: 2` to pick out the one the story is about. These numbers are real: the files the coming-soon page downloads.
 
 <Chart
   kind="bar"
@@ -41,7 +41,7 @@ A bar chart compares amounts, with each value at the tip of its bar. These numbe
   source="the myky.cc repository, October 2026"
   unit=" KB"
   bars={[
-    { label: "Page (HTML, CSS, JS)", value: 40.8 },
+    { label: "Page (HTML, CSS, JS)", value: 40.8, tone: 2 },
     { label: "Anton font", value: 18.6 },
     { label: "Roboto Mono font", value: 12.7 },
   ]}

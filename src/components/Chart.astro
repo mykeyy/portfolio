@@ -3,7 +3,7 @@
 // In .mdx writing use it with no import:
 //   <Chart kind="line" title="..." unit="%" series={[{ name: "A", data: [[2020, 3], [2021, 5]] }]} />
 //   <Chart kind="bar" title="..." unit=" KB" bars={[{ label: "HTML", value: 40.8 }]} />
-// The site has two colors, so up to three line series are told apart by line style (solid, dashed, dotted),
+// Up to three line series, each in its data color (--series-N, per section) and its own line style (solid, dashed, dotted),
 // named in a legend and at the line ends. Every chart keeps its numbers in a table under "Show the data".
 import Icon from "./Icon.astro";
 
@@ -15,6 +15,8 @@ interface Series {
 interface Bar {
   label: string;
   value: number;
+  /** Which data color (1-4) this bar takes; defaults to 1. Use it to pick out the bar the story is about. */
+  tone?: 1 | 2 | 3 | 4;
 }
 
 interface Props {
@@ -88,6 +90,7 @@ const lines = series.map((s, i) => {
   return {
     name: s.name,
     dash: DASH[i],
+    color: `var(--series-${i + 1})`,
     d: points.map(([x, v], j) => `${j ? "L" : "M"}${(xPos(x) * 1000).toFixed(1)},${((1 - yPos(v)) * 1000).toFixed(1)}`).join(""),
     end: { top: (1 - yPos(last[1])) * 100, label: series.length > 1 ? `${s.name} ${full(last[1])}` : full(last[1]) },
   };
@@ -130,7 +133,7 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
       <ul class="legend caps" aria-label="Legend">
         {lines.map((l) => (
           <li>
-            <svg class="key" viewBox="0 0 28 8" aria-hidden="true">
+            <svg class="key" viewBox="0 0 28 8" aria-hidden="true" style={`--s: ${l.color}`}>
               <line x1="2" y1="4" x2="26" y2="4" stroke-dasharray={l.dash || undefined} />
             </svg>
             {l.name}
@@ -161,17 +164,17 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
               <line class:list={["grid", { base: t === 0 }]} x1="0" x2="1000" y1={(1 - yPos(t)) * 1000} y2={(1 - yPos(t)) * 1000} />
             ))}
             {lines.map((l) => (
-              <path class="mark" d={l.d} stroke-dasharray={l.dash || undefined} />
+              <path class="mark" d={l.d} stroke-dasharray={l.dash || undefined} style={`--s: ${l.color}`} />
             ))}
           </svg>
           {lines.map((l) => (
-            <span class="dot" style={`left: 100%; top: ${l.end.top}%`} />
+            <span class="dot" style={`left: 100%; top: ${l.end.top}%; --s: ${l.color}`} />
           ))}
           <div class="cross" hidden>
             <div class="tip" />
           </div>
-          {lines.map(() => (
-            <span class="dot live" hidden />
+          {lines.map((l) => (
+            <span class="dot live" hidden style={`--s: ${l.color}`} />
           ))}
         </div>
 
@@ -195,7 +198,7 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
           <div class="bar-row">
             <span class="bar-label">{b.label}</span>
             <span class="track">
-              <span class="bar" style={`--f: ${b.value / barMax}`} />
+              <span class="bar" style={`--f: ${b.value / barMax}; --s: var(--series-${b.tone ?? 1})`} />
               <span class="bar-value">{full(b.value)}</span>
             </span>
           </div>
@@ -257,10 +260,11 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
   };
 
   const SVG = "http://www.w3.org/2000/svg";
-  const key = (dash: string) => {
+  const key = (dash: string, n: number) => {
     const svg = document.createElementNS(SVG, "svg");
     svg.setAttribute("viewBox", "0 0 28 8");
     svg.setAttribute("class", "key");
+    svg.style.setProperty("--s", `var(--series-${n + 1})`);
     const line = document.createElementNS(SVG, "line");
     for (const [k, v] of Object.entries({ x1: "2", y1: "4", x2: "26", y2: "4" })) line.setAttribute(k, v);
     if (dash) line.setAttribute("stroke-dasharray", dash);
@@ -285,11 +289,11 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
 
       const head = document.createElement("strong");
       head.textContent = data.x[index];
-      const rows = data.series.map((s) => {
+      const rows = data.series.map((s, n) => {
         const row = document.createElement("span");
         row.className = "tip-row";
         if (data.series.length > 1) {
-          row.appendChild(key(s.dash));
+          row.appendChild(key(s.dash, n));
           row.appendChild(document.createTextNode(`${s.name} `));
         }
         const value = document.createElement("b");
@@ -302,7 +306,10 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
       dots.forEach((dot, s) => {
         const v = data.series[s].values[index];
         dot.hidden = !v;
-        if (v) dot.style.cssText = `left: ${left}%; top: ${v.top}%`;
+        if (v) {
+          dot.style.left = `${left}%`;
+          dot.style.top = `${v.top}%`;
+        }
       });
     };
 
@@ -372,8 +379,8 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
 
   .key line,
   .tip :global(.key line) {
-    stroke: currentColor;
-    stroke-width: 2;
+    stroke: var(--s, currentColor);
+    stroke-width: 2.5;
     stroke-linecap: round;
   }
 
@@ -445,22 +452,23 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
 
   .grid.base { stroke: var(--paper); }
 
+  /* Each series wears its data color (--s, from --series-N); text never does */
   .mark {
     fill: none;
-    stroke: var(--paper);
+    stroke: var(--s, var(--paper));
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
   }
 
-  /* End and hover dots: 10px, ringed in the blue so they stay readable where lines cross */
+  /* End and hover dots: 10px, in the series color, ringed in the ground color so they stay readable where lines cross */
   .dot {
     position: absolute;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--paper);
+    background: var(--s, var(--paper));
     box-shadow: 0 0 0 2px var(--ink);
     transform: translate(-50%, -50%);
     pointer-events: none;
@@ -525,7 +533,7 @@ const barValueCh = Math.max(...bars.map((b) => full(b.value).length), 1);
     width: calc(var(--f) * 100%);
     min-width: 2px;
     height: 20px;
-    background: var(--paper);
+    background: var(--s, var(--series-1));
   }
 
   .bar-value {

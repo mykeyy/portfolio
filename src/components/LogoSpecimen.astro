@@ -1,0 +1,126 @@
+---
+// A logo shown the way identity work is presented: the mark large, then the same mark at small sizes (does it
+// survive at favicon size?), the inverse version, its colors with their hex values, and its typeface.
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+interface Props {
+  mark: ImageMetadata;
+  markInverse?: ImageMetadata;
+  alt: string;
+  colors: { name: string; hex: string }[];
+  typeface?: string;
+}
+
+const { mark, markInverse, alt, colors, typeface } = Astro.props;
+const smalls = [64, 32, 16];
+---
+
+<div class="spec">
+  <Image class="hero" src={mark} alt={alt} widths={[480, 960, 1440]} sizes="(min-width: 900px) 40vw, 80vw" />
+
+  <div class="row">
+    <ul class="smalls" aria-label="The mark at small sizes">
+      {
+        smalls.map((h) => (
+          <li>
+            <Image src={mark} alt="" height={h * 2} style={`height: ${h}px; width: auto`} />
+            <span class="caps">{h}px</span>
+          </li>
+        ))
+      }
+    </ul>
+    {markInverse && <Image class="inverse" src={markInverse} alt="The inverse version of the mark" height={160} style="height: 64px; width: auto" />}
+  </div>
+
+  {
+    (colors.length > 0 || typeface) && (
+      <dl class="facts caps">
+        {colors.map((c) => (
+          <div>
+            <dt>
+              <span class="chip" style={`background: ${c.hex}`} />
+              {c.name}
+            </dt>
+            <dd>{c.hex}</dd>
+          </div>
+        ))}
+        {typeface && (
+          <div>
+            <dt>Typeface</dt>
+            <dd>{typeface}</dd>
+          </div>
+        )}
+      </dl>
+    )
+  }
+</div>
+
+<style>
+  .spec {
+    display: grid;
+    gap: clamp(20px, 3vw, 40px);
+    width: 100%;
+    justify-items: start;
+  }
+
+  .hero {
+    width: min(100%, 520px);
+    height: auto;
+    justify-self: center;
+    margin-block: clamp(12px, 3vw, 40px);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    padding-top: 14px;
+    border-top: 2px solid currentColor;
+  }
+
+  .smalls {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(14px, 2vw, 28px);
+    list-style: none;
+  }
+
+  .smalls li {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+    font-size: 0.75rem;
+  }
+
+  .facts {
+    width: 100%;
+    font-size: 0.8125rem;
+    border-top: 2px solid currentColor;
+  }
+
+  .facts div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chip {
+    width: 16px;
+    height: 16px;
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
+  }
+
+  dd { font-variant-numeric: tabular-nums; }
+</style>
