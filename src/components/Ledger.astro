@@ -159,9 +159,10 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
   .title {
     grid-area: title;
     font-family: var(--display);
-    font-weight: 400;
+    font-weight: var(--display-weight);
+    letter-spacing: var(--display-track);
     text-transform: uppercase;
-    font-size: clamp(1.75rem, 0.9rem + 2.7vw, 3.75rem);
+    font-size: clamp(1.375rem, 0.75rem + 2vw, 2.75rem);
     line-height: 0.95;
     text-wrap: balance;
   }

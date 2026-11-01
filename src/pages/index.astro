@@ -34,23 +34,23 @@ const [first, ...rest] = site.name.split(" ");
     container-type: inline-size;
   }
 
-  /* The name's ink spans the column exactly, edge to edge. Measured in Anton with canvas measureText:
-     --fit is the widest line's ink width in em (6.764 for MYKEY NISHIKAWA, 4.007 for NISHIKAWA), and every line
-     starts with 0.031em of side bearing before the ink, which the negative margin pulls back to the column edge.
-     One line on wide screens; on narrow ones it breaks after the first name and NISHIKAWA sets the width. */
+  /* The name's ink spans the column exactly, edge to edge. Measured in Geist Mono 900 at -0.035em tracking with
+     canvas measureText: --fit is the widest line's ink width in em (8.4725 for MYKEY NISHIKAWA, 5.0669 for
+     NISHIKAWA), and the negative margin pulls the first letter's side bearing (0.0313em for M, 0.0469em for N)
+     back to the column edge. One line on wide screens; on narrow ones NISHIKAWA sets the width. */
   .name {
-    --fit: 6.764;
+    --fit: 8.4725;
     font-size: calc(100cqw / var(--fit));
-    line-height: 0.84;
+    line-height: 0.86;
     white-space: nowrap;
     text-wrap: nowrap;
-    margin-left: -0.03125em;
+    margin-left: -0.0313em;
   }
 
   .name .c { display: none; }
 
   @container (max-width: 520px) {
-    .name { --fit: 4.007; line-height: 0.92; }
+    .name { --fit: 5.0669; line-height: 0.94; margin-left: -0.0469em; }
     .name .c { display: inline; }
   }
 

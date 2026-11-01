@@ -92,3 +92,5 @@ Run all of these and check no scroll (either axis), no overlap, and no horizonta
 ## Status when this was written
 - Everything above is built and committed locally in the project folder. The repo now has a GitHub remote (mykeyy/portfolio); still, do not push without being asked.
 - Before launch: `og.png` must be served from the site root at `https://myky.cc/og.png`; decide whether the `?debug` panel should stay; test on a real phone; consider `/impeccable init` because `PRODUCT.md` predates Impeccable's current record format.
+
+- Nov 1, later: Anton and Roboto are gone. He chose Geist Mono 900 (Vercel, OFL) as the display face after a side-by-side of bold monos ("really bold, actual oval O"); Geist Mono 700 for labels, Geist for reading text. Self-hosted Latin variable files from Google Fonts. Cover --fit 8.4725 / 5.0669 em of ink at -0.035em tracking. Research report on motion, type, corners, color, diagrams: reports/Portfolio motion type and color.md (local, gitignored).

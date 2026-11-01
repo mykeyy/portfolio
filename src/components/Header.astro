@@ -315,7 +315,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     list-style: none;
   }
 
-  /* One panel per section: tall, white, the name set sideways in Anton, reading upward */
+  /* One panel per section: tall, white, the name set sideways in the display face, reading upward */
   .panel {
     --wash: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
     position: relative;
@@ -339,6 +339,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   .word {
     font-family: var(--display);
+    font-weight: var(--display-weight);
+    letter-spacing: var(--display-track);
     font-size: clamp(1.75rem, 0.8rem + 3.6vw, 4.5rem);
     line-height: 0.85;
     text-transform: uppercase;

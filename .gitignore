@@ -17,3 +17,7 @@ worker-configuration.d.ts
 # Impeccable run state and review captures (local)
 .impeccable/questions/
 .impeccable/review/
+
+# Research notes and reports (local)
+research_notes/
+reports/

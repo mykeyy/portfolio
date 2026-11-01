@@ -45,7 +45,11 @@ const { title, note, rgb = false } = Astro.props;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    padding-bottom: 0.04em;
+    /* The gradient only paints inside the box, and the tight line height makes the box shorter than Anton's
+       letters, which sliced their tops flat. Extra room above and below, cancelled by negative margins, keeps the
+       position and lets the whole glyph fill. */
+    padding-block: 0.12em 0.06em;
+    margin-block: -0.12em -0.06em;
   }
 
   .band {

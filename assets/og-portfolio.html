@@ -6,8 +6,7 @@
 <meta charset="utf-8">
 <title>myky.cc link preview</title>
 <style>
-  @font-face { font-family: "Anton"; src: url("../public/fonts/anton-latin.woff2") format("woff2"); }
-  @font-face { font-family: "Roboto Mono"; font-weight: 700; src: url("../public/fonts/roboto-mono-700-latin.woff2") format("woff2"); }
+  @font-face { font-family: "Geist Mono"; font-weight: 100 900; src: url("../public/fonts/geist-mono-variable-latin.woff2") format("woff2"); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1200px; height: 630px; overflow: hidden; background: #061ecf; color: #fff; }
@@ -16,7 +15,7 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 56px;
-    font-family: "Roboto Mono", monospace;
+    font-family: "Geist Mono", monospace;
     font-weight: 700;
     font-size: 22px;
     letter-spacing: 0.04em;
@@ -26,15 +25,15 @@
   .top { display: flex; justify-content: space-between; align-items: center; }
   .brand { background: #fff; color: #061ecf; padding: 4px 10px; margin-left: -10px; }
 
-  /* Ink spans the 1088px column: 1088 / 6.764em of ink = 160.85px, side bearing pulled back by 0.03125em */
+  /* Ink spans the 1088px column: 1088 / 8.4725em of ink (Geist Mono 900, -0.035em tracking) = 128.4px, side bearing pulled back by 0.0313em */
   h1 {
-    font-family: Anton, sans-serif;
-    font-weight: 400;
-    font-size: 160.85px;
-    line-height: 0.84;
-    letter-spacing: 0;
+    font-family: "Geist Mono", monospace;
+    font-weight: 900;
+    font-size: 128.4px;
+    line-height: 0.86;
+    letter-spacing: -0.035em;
     white-space: nowrap;
-    margin-left: -0.03125em;
+    margin-left: -0.0313em;
   }
 
   .line { display: flex; justify-content: space-between; margin-top: 22px; }
