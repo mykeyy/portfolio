@@ -2,8 +2,10 @@
 import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
 import BrowserFrame from "../components/BrowserFrame.astro";
+import Icon from "../components/Icon.astro";
 import LogoSpecimen from "../components/LogoSpecimen.astro";
 import PageHead from "../components/PageHead.astro";
+import Wipe from "../components/Wipe.astro";
 import Base from "../layouts/Base.astro";
 import { pad } from "../lib/entries";
 import { plateInk } from "../lib/plate";
@@ -51,6 +53,7 @@ const sizes = {
                         loading={i === 0 ? "eager" : "lazy"}
                       />
                     )}
+                    <button class="open" type="button" data-open={i} aria-label={`View ${data.title} full screen`} />
                   </div>
                   <figcaption>
                     <span class="no caps">{pad(designs.length - i)}</span>
@@ -70,6 +73,21 @@ const sizes = {
       )
     }
   </div>
+
+  <!-- The viewer: a piece full screen on its own plate color. It grows out of the plate you click and shrinks back
+       into it; arrows, swipes, or the buttons move through the pieces, Esc closes. -->
+  <dialog class="viewer" aria-label="Design viewer" data-viewer>
+    <div class="stage" data-stage></div>
+    <div class="bar caps">
+      <span class="count" data-count></span>
+      <span class="vtitle" data-vtitle></span>
+      <span class="ctrl">
+        <Wipe data-prev aria-label="Previous piece"><Icon name="arrow-left" /></Wipe>
+        <Wipe data-next aria-label="Next piece"><Icon name="arrow-right" /></Wipe>
+        <Wipe data-close aria-label="Close the viewer"><Icon name="close" /> Close</Wipe>
+      </span>
+    </div>
+  </dialog>
 </Base>
 
 <script>
@@ -101,6 +119,117 @@ const sizes = {
       { rootMargin: "-42% 0px -42% 0px" },
     );
     pieces.forEach((p) => observer.observe(p));
+  }
+
+  // The viewer. Opening, the dialog's clip grows from the clicked plate's box to the full screen, the same motion as
+  // the menu's panels; closing shrinks it back into the plate of the piece you are on. The stage holds a copy of
+  // that plate's content, sized to fill the screen.
+  const viewer = document.querySelector<HTMLDialogElement>("[data-viewer]");
+  const stage = viewer?.querySelector<HTMLElement>("[data-stage]");
+  const calm = matchMedia("(prefers-reduced-motion: reduce)");
+  const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+  const EASE_IN = "cubic-bezier(0.64, 0, 0.78, 0)";
+  let current = 0;
+  let busy = false;
+
+  const plateOf = (i: number) => pieces[i].querySelector<HTMLElement>(".plate")!;
+  const boxOf = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    return `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px)`;
+  };
+
+  const fill = (i: number) => {
+    if (!viewer || !stage) return;
+    current = (i + pieces.length) % pieces.length;
+    const piece = pieces[current];
+    const plate = plateOf(current);
+    viewer.style.setProperty("--ink", piece.dataset.plate!);
+    viewer.style.setProperty("--paper", piece.dataset.plateInk!);
+    // The browser frame's bar is painted in the plate color
+    viewer.style.setProperty("--plate", piece.dataset.plate!);
+    const copy = [...plate.children].filter((c) => !c.matches(".open")).map((c) => c.cloneNode(true) as HTMLElement);
+    copy.forEach((c) =>
+      c.querySelectorAll("img").forEach((img) => {
+        img.sizes = "100vw";
+        img.loading = "eager";
+      }),
+    );
+    copy.forEach((c) => c.matches("img") && ((c as HTMLImageElement).sizes = "100vw"));
+    stage.className = `stage ${[...plate.classList].filter((c) => c !== "plate").join(" ")}`;
+    stage.replaceChildren(...copy);
+    viewer.querySelector("[data-count]")!.textContent =
+      `${String(current + 1).padStart(2, "0")} / ${String(pieces.length).padStart(2, "0")}`;
+    viewer.querySelector("[data-vtitle]")!.textContent =
+      piece.querySelector(".title")?.firstChild?.textContent?.trim() ?? "";
+  };
+
+  const open = async (i: number) => {
+    if (!viewer || busy) return;
+    busy = true;
+    fill(i);
+    viewer.showModal();
+    document.documentElement.classList.add("menu-open");
+    if (!calm.matches) {
+      stage?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, delay: 180, easing: "ease-out", fill: "backwards" });
+      await viewer.animate([{ clipPath: boxOf(plateOf(current)) }, { clipPath: "inset(0px 0px 0px 0px)" }], {
+        duration: 480,
+        easing: EASE_OUT,
+      }).finished;
+    }
+    busy = false;
+  };
+
+  const close = async () => {
+    if (!viewer?.open || busy) return;
+    busy = true;
+    const plate = plateOf(current);
+    // Bring the piece you ended on into view behind the viewer, so the viewer can shrink back into it
+    plate.scrollIntoView({ block: "center", behavior: "instant" });
+    if (!calm.matches) {
+      await viewer.animate([{ clipPath: "inset(0px 0px 0px 0px)" }, { clipPath: boxOf(plate) }], {
+        duration: 360,
+        easing: EASE_IN,
+      }).finished;
+    }
+    viewer.close();
+    document.documentElement.classList.remove("menu-open");
+    pieces[current].querySelector<HTMLButtonElement>(".open")?.focus({ preventScroll: true });
+    busy = false;
+  };
+
+  const step = async (d: number) => {
+    if (!stage || busy) return;
+    if (calm.matches) return fill(current + d);
+    busy = true;
+    await stage.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "ease-in" }).finished;
+    fill(current + d);
+    await stage.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: "ease-out" }).finished;
+    busy = false;
+  };
+
+  if (viewer && stage) {
+    document.querySelectorAll<HTMLButtonElement>("[data-open]").forEach((b) =>
+      b.addEventListener("click", () => open(Number(b.dataset.open))),
+    );
+    viewer.querySelector("[data-prev]")?.addEventListener("click", () => step(-1));
+    viewer.querySelector("[data-next]")?.addEventListener("click", () => step(1));
+    viewer.querySelector("[data-close]")?.addEventListener("click", () => close());
+    // Esc: run the closing motion instead of the dialog's instant close
+    viewer.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      close();
+    });
+    viewer.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(1);
+    });
+    // Swipe left or right on touch screens
+    let startX = 0;
+    stage.addEventListener("pointerdown", (e) => (startX = e.clientX));
+    stage.addEventListener("pointerup", (e) => {
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1);
+    });
   }
 </script>
 
@@ -186,6 +315,92 @@ const sizes = {
   }
 
   .empty { padding: 22px 0; border-top: var(--rule); border-bottom: var(--rule); }
+
+  /* Every plate opens in the viewer: an invisible button over the whole plate */
+  .plate { position: relative; }
+
+  .open {
+    position: absolute;
+    inset: 0;
+    background: none;
+    border: 0;
+    cursor: zoom-in;
+  }
+
+  .open:focus-visible { outline: 4px solid var(--paper); outline-offset: -4px; }
+
+  /* The viewer: the whole screen in the piece's plate color, the piece as large as it fits, a mono bar below */
+  .viewer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--ink);
+    color: var(--paper);
+    transition: --ink 0.35s ease-out, --paper 0.35s ease-out;
+  }
+
+  .viewer[open] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .viewer::backdrop { background: transparent; }
+
+  .stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: clamp(16px, 4vw, 64px);
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  /* Each kind sized to fill the screen without spilling: images by height, the browser frame by a 16:9 box */
+  .stage.visual :global(img) {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100svh - 160px);
+  }
+
+  .stage.web :global(.browser) { width: min(100%, calc((100svh - 220px) * 1.7)); }
+
+  .stage.logo :global(.spec) {
+    width: min(100%, 760px);
+    max-height: 100%;
+    overflow: auto;
+  }
+
+  .bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px var(--pad);
+    border-top: 2px solid var(--paper);
+  }
+
+  .count { font-variant-numeric: tabular-nums; }
+
+  .vtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ctrl { display: flex; gap: 4px; margin-right: -0.5em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .viewer { transition: none; }
+  }
 
   /* Half pieces use the compact caption until there is room for the full ledger columns beside each other */
   @media (max-width: 1199px) {

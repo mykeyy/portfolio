@@ -127,11 +127,25 @@ summary: The question you looked into, or the answer you found.
 kind: research
 date: 2026-11-01
 updated: 2026-11-03   # optional
+abstract: One paragraph on what you did and what you found.   # research, optional
+findings:                                                      # research, optional
+  - The result, in one sentence.
+authors:                       # optional; defaults to you
+  - { name: Mykey Nishikawa }
+references:                    # cited in the text with <Cite id="wcag22" />
+  - id: wcag22
+    author: W3C
+    year: 2023
+    title: Web Content Accessibility Guidelines (WCAG) 2.2
+    publisher: W3C Recommendation
+    url: https://www.w3.org/TR/WCAG22/
 draft: false
 ---
 ```
 
-Charts need no import inside `.mdx`:
+Research pieces read as papers: the front matter (author, dates, reading time, cite-as), the abstract and findings up front, numbered sections and figures, `[1]` citations that preview their source on hover, a reference list, and **Cite this** at the end with a ready citation, a BibTeX entry, and **Save as PDF** (a clean black-on-white print layout). List references in the order the text first cites them.
+
+Charts and citations need no import inside `.mdx`:
 
 ```mdx
 <Chart

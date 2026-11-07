@@ -33,6 +33,23 @@ const writing = defineCollection({
     kind: z.enum(["research", "note"]),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
+    // Research reads as a paper: an abstract, the findings up front, authors, and numbered references that the
+    // text cites with <Cite id="..." />. All optional; notes use none of them.
+    abstract: z.string().optional(),
+    findings: z.array(z.string()).default([]),
+    authors: z.array(z.object({ name: z.string(), url: z.url().optional() })).default([]),
+    references: z
+      .array(
+        z.object({
+          id: z.string(),
+          author: z.string(),
+          title: z.string(),
+          year: z.union([z.number(), z.string()]),
+          publisher: z.string().optional(),
+          url: z.url().optional(),
+        }),
+      )
+      .default([]),
     draft: z.boolean().default(false),
   }),
 });

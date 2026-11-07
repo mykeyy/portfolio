@@ -421,6 +421,62 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   font-size: 0.85em;
 }
 
+/* Research reads as a paper: sections and figures are numbered, the way they are cited in the text and in the
+   contents list ("see section 2", "figure 1"). Notes stay unnumbered. */
+.paper { counter-reset: section figure; }
+
+.paper > h2 { counter-increment: section; }
+
+.paper > h2::before {
+  content: counter(section);
+  display: block;
+  margin-bottom: 0.35em;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: var(--label);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.paper .chart { counter-increment: figure; }
+
+.paper .chart figcaption::before {
+  content: "Fig. " counter(figure) "\2003";
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wipe::before, .wipe > .ink, .prose a { transition: none; }
+}
+
+/* Print, and "Save as PDF" on research: a clean paper. Black on white, no menu, no site chrome, links spelled out. */
+@media print {
+  :root,
+  :root[data-theme] {
+    --ink: #ffffff;
+    --paper: #000000;
+    --faint: #bbbbbb;
+  }
+
+  @page { margin: 18mm 16mm; }
+
+  html, body { background: #ffffff; color: #000000; }
+
+  .site-header, body > footer, #menu, .skip, .back, .contents, .more, .actions, .progress, .data summary { display: none !important; }
+
+  .body { display: block !important; }
+
+  .prose,
+  .references,
+  .cite-this { max-width: none; font-size: 10.5pt; }
+
+  .prose a {
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    text-decoration: underline;
+  }
+
+  .prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; overflow-wrap: anywhere; }
+
+  .prose h2, .prose h3 { break-after: avoid; }
+  .chart, .prose figure, .prose pre, .prose table, .references li { break-inside: avoid; }
 }

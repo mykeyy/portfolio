@@ -1,11 +1,13 @@
 ---
 import { render } from "astro:content";
 import Chart from "../../components/Chart.astro";
+import Cite from "../../components/Cite.astro";
 import Icon from "../../components/Icon.astro";
 import Ledger from "../../components/Ledger.astro";
 import Wipe from "../../components/Wipe.astro";
 import Base from "../../layouts/Base.astro";
-import { formatDate, getLedger, getWriting, KIND_LABEL, readingMinutes } from "../../lib/entries";
+import { formatDate, getLedger, getWriting, KIND_LABEL, pad, readingMinutes } from "../../lib/entries";
+import { site } from "../../site";
 
 export async function getStaticPaths() {
   const writing = await getWriting();
@@ -14,37 +16,116 @@ export async function getStaticPaths() {
 
 const { piece } = Astro.props;
 const { data } = piece;
+const research = data.kind === "research";
+
+// <Cite> components in the text look their sources up here, so set this before the text renders
+Astro.locals.references = data.references;
 const { Content, headings } = await render(piece);
 
-// Research gets a contents list once it has two or more sections; notes never do.
+// Research gets a numbered contents list once it has two or more sections; notes never do.
 // (Markdown adds a hidden "Footnotes" heading when a piece has footnotes; it stays out of the list.)
-const contents = data.kind === "research" ? headings.filter((h) => h.depth === 2 && h.slug !== "footnote-label") : [];
+const contents = research ? headings.filter((h) => h.depth === 2 && h.slug !== "footnote-label") : [];
 const hasContents = contents.length > 1;
 
 const href = `/writing/${piece.id}`;
+const url = new URL(href, Astro.site).toString();
 const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !== href).slice(0, 3);
+
+// Citation formats for "Cite this": APA-style text and a BibTeX entry
+const authors = data.authors.length ? data.authors : [{ name: site.name, url: Astro.site?.toString() }];
+const year = data.date.getFullYear();
+const apaName = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  const last = parts.pop() ?? name;
+  return parts.length ? `${last}, ${parts.map((p) => `${p[0]}.`).join(" ")}` : last;
+};
+const apaAuthors =
+  authors.length > 1
+    ? `${authors.slice(0, -1).map((a) => apaName(a.name)).join(", ")}, & ${apaName(authors.at(-1)!.name)}`
+    : apaName(authors[0].name);
+const apa = `${apaAuthors} (${year}). ${data.title}. ${site.domain}. ${url}`;
+const bibKey = `${(authors[0].name.split(/\s+/).pop() ?? "author").toLowerCase()}${year}${piece.id.split("-")[0]}`;
+const bibtex = [
+  `@article{${bibKey},`,
+  `  author = {${authors.map((a) => { const p = a.name.split(/\s+/); const last = p.pop(); return `${last}, ${p.join(" ")}`; }).join(" and ")}},`,
+  `  title  = {${data.title}},`,
+  `  year   = {${year}},`,
+  `  url    = {${url}},`,
+  `  note   = {${site.domain}}`,
+  `}`,
+].join("\n");
 ---
 
 <Base title={data.title} description={data.summary} type="article" theme="writing">
+  {research && <div class="progress" aria-hidden="true" data-progress />}
+
   <article class="piece wrap">
     <Wipe href="/writing" class="back caps"><Icon name="arrow-left" /> Writing</Wipe>
 
     <h1 class="display title">{data.title}</h1>
     <p class="summary">{data.summary}</p>
 
-    <dl class="meta caps">
-      <div><dt>Kind</dt><dd>{KIND_LABEL[data.kind]}</dd></div>
-      <div><dt>Published</dt><dd><time datetime={data.date.toISOString()}>{formatDate(data.date)}</time></dd></div>
+    <!-- The front matter, set like a paper's: who, when, how long, and how to cite it. Labels sit in the ledger's
+         first columns; values start on its title column (--lead). -->
+    <dl class="front">
+      <div><dt class="caps">Kind</dt><dd>{KIND_LABEL[data.kind]}</dd></div>
+      <div>
+        <dt class="caps">{authors.length > 1 ? "Authors" : "Author"}</dt>
+        <dd>
+          {
+            authors.map((a, i) => (
+              <>
+                {i > 0 && ", "}
+                {a.url ? <a href={a.url}>{a.name}</a> : a.name}
+              </>
+            ))
+          }
+        </dd>
+      </div>
+      <div><dt class="caps">Published</dt><dd><time datetime={data.date.toISOString()}>{formatDate(data.date)}</time></dd></div>
       {
         data.updated && (
           <div>
-            <dt>Updated</dt>
+            <dt class="caps">Updated</dt>
             <dd><time datetime={data.updated.toISOString()}>{formatDate(data.updated)}</time></dd>
           </div>
         )
       }
-      <div><dt>Reading</dt><dd>{readingMinutes(piece.body)} min</dd></div>
+      <div><dt class="caps">Reading</dt><dd>{readingMinutes(piece.body)} min</dd></div>
+      {
+        research && (
+          <div>
+            <dt class="caps">Cite as</dt>
+            <dd><a href="#cite">{apaAuthors} ({year})</a></dd>
+          </div>
+        )
+      }
     </dl>
+
+    {
+      data.abstract && (
+        <section class="lead-block abstract" aria-labelledby="abstract-h">
+          <h2 class="caps" id="abstract-h">Abstract</h2>
+          <p>{data.abstract}</p>
+        </section>
+      )
+    }
+
+    {
+      data.findings.length > 0 && (
+        <section class="lead-block findings" aria-labelledby="findings-h">
+          <h2 class="caps" id="findings-h">Key findings</h2>
+          <ol>
+            {data.findings.map((f, i) => (
+              <li>
+                <span class="n caps">{pad(i + 1)}</span>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
 
     <div class:list={["body", { "has-contents": hasContents }]}>
       {
@@ -52,19 +133,66 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
           <nav class="contents caps" aria-label="Contents">
             <p class="contents-name">Contents</p>
             <ol>
-              {contents.map((h) => (
+              {contents.map((h, i) => (
                 <li>
                   <Wipe href={`#${h.slug}`} data-section={h.slug}>
+                    <span class="sec">{i + 1}</span>
                     {h.text}
                   </Wipe>
                 </li>
               ))}
+              {data.references.length > 0 && (
+                <li>
+                  <Wipe href="#references">
+                    <span class="sec" />
+                    References
+                  </Wipe>
+                </li>
+              )}
             </ol>
           </nav>
         )
       }
-      <div class="prose">
-        <Content components={{ Chart }} />
+
+      <div class="text">
+        <div class:list={["prose", { paper: research }]}>
+          <Content components={{ Chart, Cite }} />
+        </div>
+
+        {
+          data.references.length > 0 && (
+            <section class="references" id="references" aria-labelledby="references-h">
+              <h2 class="display" id="references-h">References</h2>
+              <ol>
+                {data.references.map((r, i) => (
+                  <li id={`ref-${r.id}`}>
+                    <span class="n caps">[{i + 1}]</span>
+                    <span class="ref">
+                      {r.author} ({r.year}). {r.url ? <a href={r.url}>{r.title}</a> : <em>{r.title}</em>}.
+                      {r.publisher && ` ${r.publisher}.`}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )
+        }
+
+        {
+          research && (
+            <section class="cite-this" id="cite" aria-labelledby="cite-h">
+              <h2 class="display" id="cite-h">Cite this</h2>
+              <p class="apa" data-apa>{apa}</p>
+              <pre data-bibtex><code>{bibtex}</code></pre>
+              <div class="actions caps">
+                <Wipe data-copy="apa">Copy citation</Wipe>
+                <Wipe data-copy="bibtex">Copy BibTeX</Wipe>
+                <Wipe data-print>Save as PDF</Wipe>
+                <span class="sr-only" aria-live="polite" data-copied />
+              </div>
+            </section>
+          )
+        }
       </div>
     </div>
   </article>
@@ -86,34 +214,72 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
     .map((link) => ({ link, heading: document.getElementById(link.dataset.section ?? "") }))
     .filter((p): p is { link: HTMLAnchorElement; heading: HTMLElement } => p.heading !== null);
 
-  if (pairs.length) {
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const line = innerHeight / 3;
-      let current = -1;
-      pairs.forEach((p, i) => {
-        if (p.heading.getBoundingClientRect().top <= line) current = i;
-      });
-      pairs.forEach((p, i) =>
-        i === current ? p.link.setAttribute("aria-current", "location") : p.link.removeAttribute("aria-current"),
-      );
-    };
-    addEventListener("scroll", () => (frame ||= requestAnimationFrame(update)), { passive: true });
-    update();
-  }
+  // Reading progress: a 2px line across the top that fills as the article is read
+  const progress = document.querySelector<HTMLElement>("[data-progress]");
+  const article = document.querySelector<HTMLElement>(".piece");
+
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const line = innerHeight / 3;
+    let current = -1;
+    pairs.forEach((p, i) => {
+      if (p.heading.getBoundingClientRect().top <= line) current = i;
+    });
+    pairs.forEach((p, i) =>
+      i === current ? p.link.setAttribute("aria-current", "location") : p.link.removeAttribute("aria-current"),
+    );
+
+    if (progress && article) {
+      const r = article.getBoundingClientRect();
+      const done = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+      progress.style.transform = `scaleX(${done})`;
+    }
+  };
+  addEventListener("scroll", () => (frame ||= requestAnimationFrame(update)), { passive: true });
+  update();
+
+  // Cite this: copy the citation or the BibTeX entry, or print the article (the print layout is a clean paper)
+  const said = document.querySelector<HTMLElement>("[data-copied]");
+  document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) =>
+    button.addEventListener("click", async () => {
+      const text =
+        button.dataset.copy === "apa"
+          ? document.querySelector("[data-apa]")?.textContent
+          : document.querySelector("[data-bibtex]")?.textContent;
+      try {
+        await navigator.clipboard.writeText(text ?? "");
+        if (said) said.textContent = button.dataset.copy === "apa" ? "Citation copied" : "BibTeX copied";
+      } catch {
+        if (said) said.textContent = "Copy failed. Select the text instead.";
+      }
+    }),
+  );
+  document.querySelector("[data-print]")?.addEventListener("click", () => print());
 </script>
 
 <style>
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    height: 3px;
+    background: var(--paper);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
   .piece { padding-top: clamp(24px, 4vw, 56px); }
 
   .back { margin-left: -0.5em; }
 
   .title {
     margin-top: clamp(28px, 5vw, 80px);
-    font-size: clamp(3rem, 1.2rem + 6.5vw, 9.5rem);
-    line-height: 0.88;
-    max-width: 16ch;
+    font-size: clamp(2.5rem, 1rem + 5.5vw, 8rem);
+    line-height: 0.9;
+    max-width: 18ch;
   }
 
   .summary {
@@ -125,23 +291,69 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
     line-height: 1.35;
   }
 
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px clamp(24px, 4vw, 64px);
+  /* Front matter, abstract, and findings share one table grammar: label on the left, value on --lead */
+  .front {
     margin-top: clamp(32px, 4vw, 64px);
-    padding-block: 14px;
     border-top: var(--rule);
+  }
+
+  .front > div,
+  .lead-block {
+    display: grid;
+    grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr);
+    column-gap: var(--col-gap);
+    align-items: baseline;
+  }
+
+  .front > div {
+    padding: 12px 0;
     border-bottom: var(--rule);
   }
 
-  .meta dd { margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .front dd { font-variant-numeric: tabular-nums; }
 
-  .body { margin-top: clamp(32px, 5vw, 72px); }
-
-  .contents {
-    margin-bottom: clamp(32px, 4vw, 56px);
+  .front a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.22em;
   }
+
+  .lead-block {
+    padding: clamp(18px, 2vw, 28px) 0;
+    border-bottom: var(--rule);
+  }
+
+  .lead-block h2 {
+    font-size: var(--label);
+    font-weight: 700;
+  }
+
+  .abstract p {
+    max-width: 62ch;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+    line-height: 1.55;
+  }
+
+  .findings ol { list-style: none; display: grid; gap: 14px; }
+
+  .findings li {
+    display: grid;
+    grid-template-columns: 2.5em minmax(0, 1fr);
+    gap: 12px;
+    max-width: 62ch;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.45;
+  }
+
+  .findings .n { font-family: var(--mono); font-weight: 700; font-size: var(--label); }
+
+  .body { margin-top: clamp(40px, 5vw, 80px); }
+
+  .contents { margin-bottom: clamp(32px, 4vw, 56px); }
 
   .contents-name { margin-bottom: 10px; }
 
@@ -158,7 +370,86 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
     margin-inline: -0.5em;
   }
 
-  .contents :global(.lbl) { padding-block: 0.6em; }
+  .contents :global(.lbl) {
+    display: grid;
+    grid-template-columns: 2ch minmax(0, 1fr);
+    gap: 0.6em;
+    align-items: baseline;
+    padding-block: 0.6em;
+  }
+
+  .sec { font-variant-numeric: tabular-nums; }
+
+  /* References and Cite this: set after the text, in the text column */
+  .references,
+  .cite-this {
+    margin-top: clamp(56px, 7vw, 112px);
+    max-width: 60rem;
+  }
+
+  .references h2,
+  .cite-this h2 {
+    font-size: clamp(2rem, 1.3rem + 2.4vw, 3.5rem);
+    line-height: 0.95;
+    margin-bottom: clamp(16px, 2vw, 24px);
+  }
+
+  .references ol {
+    list-style: none;
+    border-top: var(--rule);
+  }
+
+  .references li {
+    display: grid;
+    grid-template-columns: 3.5em minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: var(--rule);
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
+    line-height: 1.5;
+    scroll-margin-top: 24px;
+  }
+
+  .references li:target { background: var(--paper); color: var(--ink); }
+
+  .references .n { font-family: var(--mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .references a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.22em;
+    overflow-wrap: anywhere;
+  }
+
+  .apa {
+    max-width: 68ch;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1875rem);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .cite-this pre {
+    margin-top: 16px;
+    padding: 1em 1.2em;
+    overflow-x: auto;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin: 16px 0 0 -0.5em;
+  }
 
   /* From tablet width up, the text starts on the ledger's title column (--lead), the same edge as the More
      writing list below it; the contents list fills the ledger's first columns and stays put while you read. */
@@ -170,7 +461,7 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
       align-items: start;
     }
 
-    .body .prose { grid-column: 2; }
+    .body .text { grid-column: 2; }
 
     .contents {
       grid-column: 1;
@@ -178,6 +469,15 @@ const more = (await getLedger()).filter((e) => e.kind !== "project" && e.href !=
       position: sticky;
       top: 24px;
       margin-bottom: 0;
+    }
+  }
+
+  @media (max-width: 759px) {
+    .front > div { grid-template-columns: 7em minmax(0, 1fr); }
+
+    .lead-block {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 12px;
     }
   }
 
