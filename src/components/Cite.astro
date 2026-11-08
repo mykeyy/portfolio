@@ -1,0 +1,91 @@
+---
+// A citation in research text: <Cite id="wcag22" /> becomes a numbered [1] that links to the reference list at the
+// end of the piece, numbered in the order the references are listed in the front matter. Hovering or focusing it
+// shows the source. Use it in .mdx with no import.
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+const references = Astro.locals.references ?? [];
+const index = references.findIndex((r) => r.id === id);
+if (index < 0) throw new Error(`<Cite id="${id}">: no reference with that id in this piece's front matter.`);
+const ref = references[index];
+---
+
+<span class="cite">
+  <a href={`#ref-${id}`} aria-label={`Reference ${index + 1}: ${ref.author}, ${ref.title}`}>[{index + 1}]</a>
+  <span class="card" aria-hidden="true">
+    <span class="who">{ref.author} ({ref.year})</span>
+    <span class="what">{ref.title}</span>
+    {ref.publisher && <span class="where">{ref.publisher}</span>}
+  </span>
+</span>
+
+<style>
+  .cite {
+    position: relative;
+    white-space: nowrap;
+  }
+
+  /* Not the prose link wipe: a citation is a small mono bracket that turns solid on hover */
+  .cite a {
+    padding: 0 0.12em;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.72em;
+    vertical-align: 0.35em;
+    text-decoration: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: inherit;
+  }
+
+  .cite a:is(:focus-visible, :active) {
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+  }
+
+  /* Hover only where the pointer can hover; on touch a tap would leave it stuck on */
+  @media (hover: hover) {
+    .cite a:hover {
+      background: var(--paper);
+      color: var(--ink);
+    }
+  }
+
+  /* The source, shown under the citation on screens with room for it */
+  .card {
+    position: absolute;
+    top: 1.6em;
+    left: 0;
+    z-index: 5;
+    display: none;
+    width: max-content;
+    max-width: 22rem;
+    padding: 10px 12px;
+    background: var(--paper);
+    color: var(--ink);
+    white-space: normal;
+    font-family: var(--text);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .who {
+    display: block;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .what { display: block; margin-top: 4px; font-weight: 700; }
+  .where { display: block; margin-top: 2px; }
+
+  @media (width >= 47.5em) and (hover: hover) {
+    .cite:is(:hover, :focus-within) .card { display: block; }
+  }
+</style>

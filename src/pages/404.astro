@@ -1,0 +1,26 @@
+---
+import Icon from "../components/Icon.astro";
+import Wipe from "../components/Wipe.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Not found" description="There is no page at this address.">
+  <section class="lost wrap">
+    <h1 class="display">404</h1>
+    <p class="caps">No entry at this address.</p>
+    <Wipe href="/" class="caps home">Back home <Icon name="arrow-right" /></Wipe>
+  </section>
+</Base>
+
+<style>
+  .lost { padding-top: clamp(40px, 8vw, 120px); }
+
+  h1 {
+    font-size: clamp(9rem, 2rem + 32vw, 30rem);
+    line-height: 0.8;
+  }
+
+  p { margin-top: clamp(16px, 2vw, 28px); font-size: clamp(1rem, 0.8rem + 0.8vw, 1.5rem); }
+
+  .home { margin: 12px 0 0 calc(-1 * var(--hang)); }
+</style>

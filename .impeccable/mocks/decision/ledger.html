@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1440px; height: 900px; overflow: hidden; background: #061ecf; color: #fff; }
+  body { font-family: "Roboto Mono", monospace; font-weight: 700; }
+  .page { padding: 32px 56px; }
+  header { display: flex; justify-content: space-between; align-items: center; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; }
+  header nav { display: flex; gap: 6px; }
+  header a { color: #fff; text-decoration: none; padding: 4px 10px; }
+  h1 { font-family: Anton, sans-serif; font-weight: 400; text-transform: uppercase; font-size: 192px; line-height: 0.82; white-space: nowrap; margin-top: 150px; }
+  .line { display: flex; justify-content: space-between; margin-top: 26px; font-size: 22px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .ledger { margin-top: 84px; }
+  .filters { display: flex; gap: 6px; margin-bottom: 14px; font-size: 22px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .filters span { padding: 4px 10px; }
+  .filters .on { background: #fff; color: #061ecf; }
+  table { width: 100%; border-collapse: collapse; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em; }
+  th { text-align: left; font-size: 22px; padding: 0 0 10px; border-bottom: 2px solid #fff; }
+  td { padding: 12px 0; border-bottom: 2px solid #fff; }
+  td.t { font-family: Anton, sans-serif; font-weight: 400; font-size: 40px; letter-spacing: 0.01em; }
+  .n { width: 7%; } .y { width: 10%; } .k { width: 16%; }
+  th:last-child, td:last-child { text-align: right; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <span>myky.cc</span>
+      <nav><a href="#">Projects</a><a href="#">Writing</a><a href="#">About</a><a href="#">Contact</a></nav>
+    </header>
+
+    <h1>Mykey Nishikawa</h1>
+    <div class="line">
+      <span>Independent developer and designer</span>
+      <span>Philippines</span>
+    </div>
+
+    <section class="ledger">
+      <div class="filters"><span class="on">All 07</span><span>Projects 03</span><span>Research 01</span><span>Notes 03</span></div>
+      <table>
+        <thead><tr><th class="n">No.</th><th class="y">Year</th><th class="k">Kind</th><th>Title</th><th>Open</th></tr></thead>
+        <tbody>
+          <tr><td>07</td><td>2026</td><td>Research</td><td class="t">Research piece one</td><td>Read</td></tr>
+          <tr><td>06</td><td>2026</td><td>Project</td><td class="t">myky.cc coming soon</td><td>View</td></tr>
+          <tr><td>05</td><td>2026</td><td>Note</td><td class="t">A short note</td><td>Read</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

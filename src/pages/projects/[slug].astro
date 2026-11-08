@@ -1,0 +1,177 @@
+---
+import { bearing } from "../../lib/bearing";
+import { render } from "astro:content";
+import { Image } from "astro:assets";
+import Chart from "../../components/Chart.astro";
+import Icon from "../../components/Icon.astro";
+import Ledger from "../../components/Ledger.astro";
+import Wipe from "../../components/Wipe.astro";
+import Base from "../../layouts/Base.astro";
+import { getLedger, getProjects } from "../../lib/entries";
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+
+const href = `/projects/${project.id}`;
+const more = (await getLedger()).filter((e) => e.kind === "project" && e.href !== href).slice(0, 3);
+const external = { target: "_blank", rel: "noopener" };
+// The title's longest word caps its size, so it always fits the column
+const pull = bearing(data.title);
+const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
+---
+
+<Base title={data.title} description={data.summary} type="article" theme="projects">
+  <article class="case wrap">
+    <Wipe href="/projects" class="back caps"><Icon name="arrow-left" /> Projects</Wipe>
+
+    <h1 class="display title" style={`--chars: ${longest}; --pull: ${pull}em`}>{data.title}</h1>
+    <p class="summary">{data.summary}</p>
+
+    <!-- What people read first: the problem, the role, and the outcome, before any of the story.
+         Labels sit in the ledger's first columns and values start on its title column (--lead). -->
+    <dl class="facts">
+      <div><dt class="caps">Problem</dt><dd class="say">{data.problem}</dd></div>
+      <div><dt class="caps">Role</dt><dd>{data.role}</dd></div>
+      <div><dt class="caps">Outcome</dt><dd class="say">{data.outcome}</dd></div>
+      <div><dt class="caps">Year</dt><dd>{data.date.getFullYear()}</dd></div>
+      {data.stack.length > 0 && <div><dt class="caps">Stack</dt><dd>{data.stack.join(", ")}</dd></div>}
+      {
+        (data.url || data.repo) && (
+          <div>
+            <dt class="caps">Links</dt>
+            <dd class="links">
+              {data.url && (
+                <Wipe href={data.url} class="caps" {...external}>
+                  Live site <Icon name="arrow-up-right" />
+                </Wipe>
+              )}
+              {data.repo && (
+                <Wipe href={data.repo} class="caps" {...external}>
+                  Code <Icon name="arrow-up-right" />
+                </Wipe>
+              )}
+            </dd>
+          </div>
+        )
+      }
+    </dl>
+
+    {
+      data.cover && (
+        <Image
+          src={data.cover}
+          alt={data.coverAlt ?? ""}
+          class="cover"
+          widths={[640, 1024, 1600, 2400]}
+          sizes="(min-width: 1760px) 1632px, calc(100vw - 2 * clamp(16px, 4vw, 64px))"
+        />
+      )
+    }
+
+    <div class="prose body">
+      <Content components={{ Chart }} />
+    </div>
+  </article>
+
+  {
+    more.length > 0 && (
+      <section class="more">
+        <h2 class="display wrap">More projects</h2>
+        <Ledger entries={more} label="More projects" />
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .case {
+    container-type: inline-size; padding-top: clamp(24px, 4vw, 56px); }
+
+  .back { margin-left: calc(-1 * var(--hang)); }
+
+  .title {
+    margin-top: clamp(28px, 5vw, 80px);
+    /* Never wider than the column: the longest word is --chars x 0.565em in Geist Mono */
+    /* The first letter's ink sits on the column edge (src/lib/bearing.ts) */
+    margin-left: calc(-1 * var(--pull, 0em));
+    font-size: min(clamp(3.25rem, 1.2rem + 8vw, 11rem), 100cqi / (var(--chars) * 0.565));
+    line-height: 0.86;
+    max-width: 14ch;
+  }
+
+  .summary {
+    margin-top: clamp(16px, 2vw, 28px);
+    max-width: 34ch;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1.25rem, 1rem + 1vw, 2rem);
+    line-height: 1.3;
+  }
+
+  /* The rules hang past the column like every other line; the text stays on the column edge */
+  .facts {
+    margin-top: clamp(40px, 6vw, 96px);
+    margin-inline: calc(-1 * var(--hang));
+    border-top: var(--rule);
+  }
+
+  .facts > div {
+    display: grid;
+    grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr);
+    column-gap: var(--col-gap);
+    align-items: baseline;
+    padding: 14px var(--hang);
+    border-bottom: var(--rule);
+  }
+
+  .say {
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem);
+    line-height: 1.4;
+    max-width: 48ch;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin: -0.25em 0 -0.25em calc(-1 * var(--hang));
+  }
+
+  /* A screenshot of a blue page on a blue page would read as part of this one, so the cover gets the 2px rule
+     as a frame: it is a picture of the work, not the page itself */
+  .cover {
+    /* The frame's edges line up with every rule on the page: it hangs past the column by --hang */
+    width: calc(100% + 2 * var(--hang));
+    max-width: none;
+    margin-inline: calc(-1 * var(--hang));
+    height: auto;
+    margin-top: clamp(40px, 6vw, 96px);
+    border: var(--rule);
+  }
+
+  .body { margin-top: clamp(40px, 6vw, 96px); }
+
+  /* From tablet width up, the story starts on the ledger's title column too */
+  @media (width >= 47.5em) {
+    .body { margin-left: var(--lead); }
+  }
+
+  @media (width < 47.5em) {
+    .facts > div { grid-template-columns: 6.5em minmax(0, 1fr); }
+  }
+
+  .more { margin-top: var(--block); }
+
+  .more h2 {
+    font-size: clamp(2.5rem, 1.5rem + 4vw, 6rem);
+    margin-bottom: clamp(16px, 2vw, 28px);
+  }
+</style>

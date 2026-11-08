@@ -1,0 +1,80 @@
+---
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+
+const [first, ...rest] = site.name.split(" ");
+---
+
+<Base cover>
+  <section class="intro wrap">
+    <!-- Each word moves on its own when the name breaks onto two lines (or back), so NISHIKAWA slides down under
+         MYKEY instead of jumping there (src/lib/fluid.ts) -->
+    <h1 class="name display">
+      <span class="w" data-fluid data-fluid-scale>{first}</span>{" "}<br class="c" data-fluid-shape /><span
+        class="w"
+        data-fluid
+        data-fluid-scale>{rest.join(" ")}</span>
+    </h1>
+    <p class="line caps">
+      <span>Independent developer and designer</span>
+      <span>Philippines, UTC+8</span>
+    </p>
+  </section>
+</Base>
+
+<style>
+  /* One screen, nothing to scroll: the name sits at the bottom, the menu button alone at the top */
+  :global(body.cover) {
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    /* One screen: no rubber-band bounce or pull-to-refresh tug on the cover */
+    overscroll-behavior-y: none;
+  }
+
+  :global(body.cover main) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .intro {
+    padding-bottom: clamp(28px, 6vh, 88px);
+    container-type: inline-size;
+  }
+
+  /* The name's ink spans the column exactly, edge to edge. Measured in Geist Mono 900 at -0.035em tracking with
+     canvas measureText: --fit is the widest line's ink width in em (8.4725 for MYKEY NISHIKAWA with a full space,
+     less the 0.3em the word gap is tightened by; 5.0669 for NISHIKAWA), and the negative margin pulls the first
+     letter's side bearing (0.0313em for M, 0.0469em for N) back to the column edge. One line on wide screens; on
+     narrow ones NISHIKAWA sets the width.
+     A monospace space is as wide as a letter, which reads as a hole between two words this big, so the gap is
+     pulled in to about half a letter. */
+  .name {
+    --fit: 8.1725;
+    word-spacing: -0.3em;
+    font-size: calc(100cqw / var(--fit));
+    line-height: 0.86;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    margin-left: -0.0313em;
+  }
+
+  .name .c { display: none; }
+
+  /* Words are boxes so they can move on their own */
+  .name .w { display: inline-block; }
+
+  @container (max-width: 520px) {
+    .name { --fit: 5.0669; line-height: 0.94; margin-left: -0.0469em; }
+    .name .c { display: inline; }
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 24px;
+    margin-top: clamp(14px, 1.6vw, 24px);
+  }
+</style>

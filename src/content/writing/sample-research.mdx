@@ -1,0 +1,110 @@
+---
+title: How a research piece is put together
+summary: A sample piece that shows every part a research article can use, from charts to footnotes. Delete it once you publish your own.
+kind: research
+date: 2026-10-30
+abstract: This sample walks through every part a research piece on myky.cc can use. A piece opens like a paper, with its authors, dates, an abstract, and its findings up front. The text has numbered sections and figures, charts drawn when the site builds in color-blind-safe data colors, tables, footnotes, and citations that lead to a numbered reference list. It ends with a ready-made citation, a BibTeX entry, and a clean print layout for saving as PDF.
+findings:
+  - Put the answer first. Most readers stop after the summary and the findings, so those must carry the result on their own.
+  - Charts carry color and line style together, so every series stays distinguishable for color-blind readers and in black-and-white print.
+  - Every claim that rests on someone else's work cites it, and the reference list says exactly where to find it.
+references:
+  - id: mdx
+    author: MDX contributors
+    year: n.d.
+    title: What is MDX?
+    url: https://mdxjs.com/docs/what-is-mdx/
+  - id: machado2009
+    author: Machado, G. M., Oliveira, M. M., & Fernandes, L. A. F.
+    year: 2009
+    title: A physiologically-based model for simulation of color vision deficiency
+    publisher: IEEE Transactions on Visualization and Computer Graphics, 15(6), 1291–1298
+  - id: wcag22
+    author: W3C
+    year: 2023
+    title: Web Content Accessibility Guidelines (WCAG) 2.2
+    publisher: W3C Recommendation
+    url: https://www.w3.org/TR/WCAG22/
+draft: true
+---
+
+This is a placeholder and a guide. Drafts show while you run `bun run dev` and never appear in a build. Each research piece is one `.mdx` file in `src/content/writing`, with `kind: research` at the top. [MDX](https://mdxjs.com/docs/what-is-mdx/) is Markdown that can hold components like charts.<Cite id="mdx" /> Short notes use `kind: note` and plain `.md`.
+
+## Start with the question
+
+The summary at the top is the first thing anyone reads, here and in the ledger, so write it as the question you looked into or the answer you found. Put the answer early. People who only read the first paragraph should still leave with it.
+
+A piece with two or more `##` sections gets a contents list. On a wide screen it stays beside the text while you read, and it marks the section you are in.
+
+## Charts
+
+Write `<Chart>` anywhere in an `.mdx` file. It is drawn when the site builds, so it costs the reader no JavaScript to see, and every chart keeps its numbers in a table under **Show the data**.
+
+A line chart takes up to three series. Each gets its own data color, tested to stay apart for color-blind readers with a standard simulation of color vision deficiency,<Cite id="machado2009" /> and readable against its background at 3:1 contrast or better.<Cite id="wcag22" /> Each also gets its own line style (solid, dashed, dotted), so color is never the only cue. The site itself stays two colors; only data gets more. Hover or tap the chart to read each point, or tab to it and use the arrow keys.
+
+<Chart
+  kind="line"
+  title="Three made-up series, 2019 to 2026"
+  sample
+  xLabel="Year"
+  unit="%"
+  series={[
+    { name: "Alpha", data: [[2019, 12], [2020, 18], [2021, 21], [2022, 30], [2023, 34], [2024, 41], [2025, 47], [2026, 55]] },
+    { name: "Beta", data: [[2019, 30], [2020, 28], [2021, 31], [2022, 27], [2023, 25], [2024, 26], [2025, 22], [2026, 19]] },
+    { name: "Gamma", data: [[2019, 5], [2020, 7], [2021, 6], [2022, 9], [2023, 12], [2024, 11], [2025, 10], [2026, 8]] },
+  ]}
+/>
+
+A bar chart compares amounts, with each value at the tip of its bar. Give one bar `tone: 2` to pick out the one the story is about. These numbers are real: the files the coming-soon page downloads.
+
+<Chart
+  kind="bar"
+  title="What the coming-soon page downloads, in kilobytes"
+  source="the myky.cc repository, October 2026"
+  unit=" KB"
+  bars={[
+    { label: "Page (HTML, CSS, JS)", value: 40.8, tone: 2 },
+    { label: "Anton font", value: 18.6 },
+    { label: "Roboto Mono font", value: 12.7 },
+  ]}
+/>
+
+The code for the first chart looks like this:
+
+```mdx
+<Chart
+  kind="line"
+  title="Three made-up series, 2019 to 2026"
+  sample
+  xLabel="Year"
+  unit="%"
+  series={[
+    { name: "Alpha", data: [[2019, 12], [2020, 18]] },
+    { name: "Beta", data: [[2019, 30], [2020, 28]] },
+  ]}
+/>
+```
+
+Leave out `sample` once the numbers are real, and add `source` so readers know where they came from.
+
+## Tables, quotes, and footnotes
+
+Tables are for exact numbers people will compare across a row.
+
+| File | Size | Loaded |
+| --- | --- | --- |
+| index.html | 40.8 KB | Always |
+| anton-latin.woff2 | 18.6 KB | Always |
+| og.png | 51.0 KB | Only by link previews |
+
+> A pull quote sits a size up from the text, for the one line you want people to remember.
+
+Footnotes go at the bottom, where they don't interrupt the reading.[^1]
+
+## Citations and the paper parts
+
+Sources go in the front matter as `references`, each with an `id`, and the text cites them with `<Cite id="wcag22" />`. The citation becomes a number in brackets, hover it to see the source, and click it to jump to the reference list. Numbers follow the order of the list, so list sources in the order the text first cites them.
+
+The `abstract` and `findings` fields fill the blocks under the title. Every research piece ends with **Cite this**: a ready-made citation, a BibTeX entry for papers, and **Save as PDF**, which prints the piece as a clean black-on-white paper with its links spelled out.
+
+[^1]: Write `[^1]` in the text and `[^1]: the note` anywhere below it.

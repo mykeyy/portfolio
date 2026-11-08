@@ -1,0 +1,65 @@
+---
+import Contacts from "../components/Contacts.astro";
+import PageHead from "../components/PageHead.astro";
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+---
+
+<Base title="About" description={`About ${site.name}: ${site.description}`}>
+  <PageHead title="About" />
+
+  <div class="wrap">
+    <!-- Labels sit in the ledger's first columns; values and text start on its title column (--lead) -->
+    <dl class="facts">
+      <div><dt class="caps">Name</dt><dd>{site.name}</dd></div>
+      <div><dt class="caps">Does</dt><dd>Development and design</dd></div>
+      <div><dt class="caps">Based in</dt><dd>Philippines, UTC+8</dd></div>
+    </dl>
+
+    <!-- Write your about text here: who you are, what you make, who you make it for, what you want to do next. -->
+    <div class="prose">
+      <p>I'm {site.name}, an independent developer and designer in the Philippines.</p>
+      <p>[Placeholder: two or three more sentences on what you make, who you make it for, and what you want to work on next.]</p>
+    </div>
+
+    <section class="contact" aria-labelledby="contact-h">
+      <h2 class="display" id="contact-h">Contact</h2>
+      <Contacts />
+    </section>
+  </div>
+</Base>
+
+<style>
+  /* The rules hang past the column like every other line; the text stays on the column edge */
+  .facts { border-top: var(--rule); margin-inline: calc(-1 * var(--hang)); }
+
+  .facts > div {
+    display: grid;
+    grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr);
+    column-gap: var(--col-gap);
+    align-items: baseline;
+    padding: 14px var(--hang);
+    border-bottom: var(--rule);
+  }
+
+  .contact { margin-top: var(--block); }
+
+  .contact h2 {
+    font-size: clamp(3rem, 2rem + 5vw, 7.5rem);
+    margin-bottom: clamp(16px, 2vw, 28px);
+  }
+
+  .prose {
+    margin-top: clamp(40px, 6vw, 96px);
+    font-size: clamp(1.25rem, 1rem + 0.9vw, 1.875rem);
+    line-height: 1.4;
+  }
+
+  @media (width >= 47.5em) {
+    .prose { margin-left: var(--lead); }
+  }
+
+  @media (width < 47.5em) {
+    .facts > div { grid-template-columns: 6.5em minmax(0, 1fr); }
+  }
+</style>

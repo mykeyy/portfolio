@@ -1,0 +1,25 @@
+---
+// A link (with href) or a button (without) that moves with the white wipe. The label is drawn twice: the white
+// copy you read, and a blue copy for the wipe to reveal. See .wipe in global.css.
+import type { HTMLAttributes } from "astro/types";
+
+// Buttons are always type="button", so `type` is not a prop.
+type Props = Omit<HTMLAttributes<"a">, "type"> & Omit<HTMLAttributes<"button">, "type"> & { href?: string };
+
+const { href, class: className, ...rest } = Astro.props;
+const label = await Astro.slots.render("default");
+---
+
+{
+  href ? (
+    <a href={href} class:list={["wipe", className]} {...rest}>
+      <span class="lbl" set:html={label} />
+      <span class="lbl ink" aria-hidden="true" set:html={label} />
+    </a>
+  ) : (
+    <button type="button" class:list={["wipe", className]} {...rest}>
+      <span class="lbl" set:html={label} />
+      <span class="lbl ink" aria-hidden="true" set:html={label} />
+    </button>
+  )
+}

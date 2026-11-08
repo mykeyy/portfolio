@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Source of the myky.cc wordmark images in src/content/designs: the site's brand block, set large.
+     ?inverse renders the blue version. Rendered with headless Chrome on black, then trimmed to the block. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>myky.cc wordmark</title>
+<style>
+  @font-face { font-family: "Geist Mono"; font-weight: 100 900; src: url("../public/fonts/geist-mono-variable-latin.woff2") format("woff2"); }
+  * { margin: 0; padding: 0; }
+  html, body { background: #000; }
+  body { padding: 40px; }
+  b {
+    display: inline-block;
+    padding: 0.25em 0.5em;
+    font-family: "Geist Mono", monospace;
+    font-weight: 700;
+    font-size: 200px;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: #fff;
+    color: #061ecf;
+  }
+  .inverse b { background: #061ecf; color: #fff; }
+</style>
+<script>if (location.search.includes("inverse")) document.documentElement.className = "inverse";</script>
+</head>
+<body><b>myky.cc</b></body>
+</html>

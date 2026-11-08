@@ -1,0 +1,231 @@
+---
+// The ledger: projects and writing as one numbered record, newest first. Each row is one wipe link.
+// With `filters`, a row of buttons narrows it by kind (the URL keeps the choice as ?kind=...).
+import Icon from "./Icon.astro";
+import Wipe from "./Wipe.astro";
+import { KIND_LABEL, pad, type Entry, type Kind } from "../lib/entries";
+
+interface Props {
+  entries: Entry[];
+  label: string;
+  filters?: Kind[];
+}
+
+const { entries, label, filters = [] } = Astro.props;
+
+const PLURAL: Record<Kind, string> = { project: "Projects", research: "Research", note: "Notes" };
+const count = (kind: Kind) => entries.filter((e) => e.kind === kind).length;
+const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
+---
+
+<section class="ledger wrap" data-ledger aria-label={label}>
+  {
+    filters.length > 0 && entries.length > 0 && (
+      <div class="filters caps" role="group" aria-label="Show" hidden>
+        <Wipe data-filter="all" aria-pressed="true">
+          All <span class="n">{pad(entries.length)}</span>
+        </Wipe>
+        {filters.map((kind) => (
+          <Wipe data-filter={kind} aria-pressed="false" disabled={count(kind) === 0}>
+            {PLURAL[kind]} <span class="n">{pad(count(kind))}</span>
+          </Wipe>
+        ))}
+        <p class="sr-only" aria-live="polite" data-status />
+      </div>
+    )
+  }
+
+  {
+    entries.length === 0 ? (
+      <p class="empty caps">Nothing here yet.</p>
+    ) : (
+      <>
+        <div class="head caps" aria-hidden="true">
+          <span>No.</span>
+          <span>Year</span>
+          <span>Kind</span>
+          <span>Title</span>
+        </div>
+        <ol class="rows">
+          {entries.map((e) => (
+            <li data-kind={e.kind}>
+              <Wipe href={e.href} class="row">
+                <span class="no caps">{pad(e.no)}</span>
+                <span class="meta caps">
+                  <span class="year">{e.date.getFullYear()}</span>
+                  <span class="kind">{KIND_LABEL[e.kind]}</span>
+                </span>
+                <span class="title">{e.title}</span>
+                <span class="sum">{e.summary}</span>
+                <span class="go caps">
+                  {e.draft && <span class="draft">Draft</span>}
+                  {verb(e.kind)}
+                  <Icon name="arrow-right" />
+                </span>
+              </Wipe>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+</section>
+
+<script>
+  const PLURAL: Record<string, string> = { project: "projects", research: "research pieces", note: "notes" };
+
+  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((ledger, n) => {
+    const bar = ledger.querySelector<HTMLElement>(".filters");
+    if (!bar) return;
+    const buttons = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
+    const rows = [...ledger.querySelectorAll<HTMLElement>("[data-kind]")];
+    const status = bar.querySelector<HTMLElement>("[data-status]");
+
+    const show = (kind: string, announce = true) => {
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filter === kind)));
+      let shown = 0;
+      rows.forEach((row) => {
+        row.hidden = kind !== "all" && row.dataset.kind !== kind;
+        if (!row.hidden) shown++;
+      });
+      if (announce && status) status.textContent = `Showing ${shown} ${kind === "all" ? "entries" : PLURAL[kind]}`;
+
+      const url = new URL(location.href);
+      if (kind === "all") url.searchParams.delete("kind");
+      else url.searchParams.set("kind", kind);
+      history.replaceState(history.state, "", url);
+    };
+
+    // Rows glide to their new places instead of jumping: each row is its own view-transition element (styles in
+    // global.css). The names are set only for the length of the change, so on page changes the rows wipe in with
+    // the rest of the page. Reduced motion, or a browser without view transition types, gets the plain change.
+    const name = (on: boolean) =>
+      rows.forEach((row, i) => (row.style.viewTransitionName = on ? `ledger-${n}-${i}` : ""));
+    const calm = matchMedia("(prefers-reduced-motion: reduce)");
+    const change = (kind: string) => {
+      const doc = document as Document & {
+        startViewTransition?: (o: { update: () => void; types: string[] }) => { finished: Promise<void> };
+      };
+      const VT = (globalThis as { ViewTransition?: { prototype: object } }).ViewTransition;
+      if (calm.matches || !doc.startViewTransition || !VT || !("types" in VT.prototype)) {
+        show(kind);
+        return;
+      }
+      name(true);
+      doc.startViewTransition({ update: () => show(kind), types: ["filter"] }).finished.finally(() => name(false));
+    };
+
+    buttons.forEach((b) => b.addEventListener("click", () => change(b.dataset.filter ?? "all")));
+
+    const asked = new URLSearchParams(location.search).get("kind");
+    if (asked && buttons.some((b) => b.dataset.filter === asked && !b.disabled)) show(asked, false);
+    bar.hidden = false;
+  });
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: clamp(14px, 1.6vw, 22px);
+    margin-left: calc(-1 * var(--hang));
+  }
+
+  .filters[hidden] { display: none; }
+
+  /* On touch screens each filter is at least 44px tall, a comfortable thumb target */
+  @media (pointer: coarse) {
+    .filters :global(.wipe) { min-height: 44px; }
+  }
+
+  .n { font-variant-numeric: tabular-nums; }
+
+  /* Columns: number, year, kind, then the title and its line, then the action */
+  .head,
+  .row > :global(.lbl) {
+    display: grid;
+    grid-template-columns: var(--col-no) var(--col-year) var(--col-kind) minmax(0, 1fr) auto;
+    column-gap: var(--col-gap);
+  }
+
+  /* The rules run as wide as the highlight bar: header, rows and lines all hang past the column by --hang, and
+     the text inside lines up with the column */
+  .head {
+    padding: 0 var(--hang) 10px;
+    margin-inline: calc(-1 * var(--hang));
+    border-bottom: var(--rule);
+  }
+
+  .rows { list-style: none; margin-inline: calc(-1 * var(--hang)); }
+  .rows li { border-bottom: var(--rule); }
+  .rows li[hidden] { display: none; }
+
+  .row { display: flex; }
+
+  .row > :global(.lbl) {
+    flex: 1;
+    grid-template-areas: "no year kind title go" "no year kind sum go";
+    align-items: baseline;
+    row-gap: 6px;
+    padding: clamp(14px, 1.6vw, 22px) var(--hang);
+  }
+
+  .no { grid-area: no; font-variant-numeric: tabular-nums; }
+  .meta { display: contents; }
+  .meta .year { grid-area: year; font-variant-numeric: tabular-nums; }
+  .meta .kind { grid-area: kind; }
+
+  .title {
+    grid-area: title;
+    font-family: var(--display);
+    font-weight: var(--display-weight);
+    letter-spacing: var(--display-track);
+    text-transform: uppercase;
+    font-size: clamp(1.375rem, 0.75rem + 2vw, 2.75rem);
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .sum {
+    grid-area: sum;
+    font-family: var(--text);
+    font-weight: 400;
+    font-size: clamp(0.9375rem, 0.88rem + 0.2vw, 1.0625rem);
+    line-height: 1.45;
+    max-width: 60ch;
+  }
+
+  .go {
+    grid-area: go;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    justify-self: end;
+  }
+
+  /* Only seen in `bun run dev`: drafts never reach a build */
+  .draft {
+    margin-right: 0.6em;
+    padding: 0.1em 0.4em;
+    outline: 1px solid currentColor;
+  }
+
+  .empty { padding: 22px var(--hang); margin-inline: calc(-1 * var(--hang)); border-top: var(--rule); border-bottom: var(--rule); }
+
+  /* Narrow screens: number, kind and year share the top line; the title and its line take the full width */
+  @media (width < 47.5em) {
+    .head { display: none; }
+    .rows { border-top: var(--rule); }
+
+    .row > :global(.lbl) {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "no meta go" "title title title" "sum sum sum";
+      row-gap: 8px;
+    }
+
+    .meta { display: flex; gap: 0.75em; grid-area: meta; }
+    .meta .year { order: 2; }
+    .title { margin-top: 4px; }
+  }
+</style>
