@@ -42,11 +42,15 @@ const [first, ...rest] = site.name.split(" ");
   }
 
   /* The name's ink spans the column exactly, edge to edge. Measured in Geist Mono 900 at -0.035em tracking with
-     canvas measureText: --fit is the widest line's ink width in em (8.4725 for MYKEY NISHIKAWA, 5.0669 for
-     NISHIKAWA), and the negative margin pulls the first letter's side bearing (0.0313em for M, 0.0469em for N)
-     back to the column edge. One line on wide screens; on narrow ones NISHIKAWA sets the width. */
+     canvas measureText: --fit is the widest line's ink width in em (8.4725 for MYKEY NISHIKAWA with a full space,
+     less the 0.3em the word gap is tightened by; 5.0669 for NISHIKAWA), and the negative margin pulls the first
+     letter's side bearing (0.0313em for M, 0.0469em for N) back to the column edge. One line on wide screens; on
+     narrow ones NISHIKAWA sets the width.
+     A monospace space is as wide as a letter, which reads as a hole between two words this big, so the gap is
+     pulled in to about half a letter. */
   .name {
-    --fit: 8.4725;
+    --fit: 8.1725;
+    word-spacing: -0.3em;
     font-size: calc(100cqw / var(--fit));
     line-height: 0.86;
     white-space: nowrap;

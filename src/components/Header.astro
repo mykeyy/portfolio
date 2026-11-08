@@ -57,7 +57,6 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
           >
             <span class="glyph" aria-hidden="true" data-glyph={s.icon}>
               <pre />
-              <canvas />
             </span>
             <span class="word">{s.label}</span>
             <span class="over" aria-hidden="true">
@@ -356,9 +355,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   // The panel icons, set in ASCII. Each icon is drawn once into a small canvas; then every character cell of a
   // monospace grid takes a character by how much of it the drawing covers, from a space up to @. Hovering a panel
-  // scrambles its icon, each character settling back at its own moment.
+  // changes the icon's color with the fill.
   const RAMP = " .:-=+*#%@";
-  const NOISE = "#%@*+=-:/\\<>[]{}01";
   const COLS = 34, ROWS = 20; // a monospace cell is about 0.6 as wide as it is tall, so this grid is near square
   const ICONS: Record<string, { fill: string[]; cut: string[] }> = {
     // A code window: its title bar, and </> inside
@@ -417,87 +415,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     return out;
   }
 
-  // Hover: the icon's characters jump and fall out of the panel, tumbling and flickering as they go, then the whole
-  // fall plays back and they land home, in the same places, as the icon again. It starts where the pointer came in
-  // and spreads across the icon from there. Drawn on a canvas that reaches past the icon (the panel clips it).
-  // The static icon is plain text in a <pre>; the canvas only draws while the characters are in the air.
+  // The icons are plain text, set once. On hover they only change color with the panel's fill.
   menu.querySelectorAll<HTMLElement>("[data-glyph]").forEach((box) => {
     const icon = ICONS[box.dataset.glyph ?? ""];
     const pre = box.querySelector("pre");
-    const cv = box.querySelector("canvas");
-    if (!icon || !pre || !cv) return;
-    const art = ascii(icon);
-    pre.textContent = art;
-    const chars = art.split("\n").flatMap((line, r) =>
-      [...line].flatMap((ch, c) => (ch === " " ? [] : [{ ch, r, c, vx: 0, vy: 0, spin: 0, delay: 0 }])),
-    );
-    let raf = 0;
-    const T = 0.62; // seconds in the air
-    const SPREAD = 0.22; // the last character leaves this long after the first
-    const BACK = 1.8; // the return plays this much faster
-
-    box.closest("[data-panel]")?.addEventListener("pointerenter", (e) => {
-      if (calm.matches) return;
-      cancelAnimationFrame(raf);
-      const style = getComputedStyle(pre);
-      const fs = parseFloat(style.fontSize);
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      const W = cv.offsetWidth, H = cv.offsetHeight;
-      cv.width = Math.round(W * dpr);
-      cv.height = Math.round(H * dpr);
-      const ctx = cv.getContext("2d")!;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.font = `${style.fontWeight} ${fs}px ${style.fontFamily}`;
-      ctx.textBaseline = "top";
-      const cw = ctx.measureText("M").width;
-      // The canvas reaches 8em left and 4em above the icon (see .glyph canvas)
-      const ox = 8 * fs, oy = 4 * fs;
-      const br = box.getBoundingClientRect();
-      const px = ((e as PointerEvent).clientX - br.left) / br.width * pre.offsetWidth + ox;
-      const py = ((e as PointerEvent).clientY - br.top) / br.height * pre.offsetHeight + oy;
-      const far = Math.hypot(pre.offsetWidth, pre.offsetHeight) || 1;
-      const G = fs * 160; // gravity, scaled to the type
-      chars.forEach((ch) => {
-        ch.delay = (Math.hypot(ox + ch.c * cw - px, oy + ch.r * fs - py) / far) * SPREAD;
-        const angle = ((-90 + (Math.random() - 0.5) * 80) * Math.PI) / 180;
-        const speed = fs * (12 + Math.random() * 32);
-        ch.vx = Math.cos(angle) * speed;
-        ch.vy = Math.sin(angle) * speed;
-        ch.spin = (Math.random() - 0.5) * 9;
-      });
-      const F = T + SPREAD;
-      const t0 = performance.now();
-      pre.style.visibility = "hidden";
-      const tick = (now: number) => {
-        // A frame's timestamp can come from just before the hover began, so time never runs below zero
-        const t = Math.max(0, (now - t0) / 1000);
-        const g = t < F ? t : F - (t - F) * BACK;
-        ctx.clearRect(0, 0, W, H);
-        ctx.fillStyle = getComputedStyle(pre).color;
-        for (const ch of chars) {
-          const l = Math.min(T, Math.max(0, g - ch.delay));
-          const x = ox + ch.c * cw + ch.vx * l;
-          const y = oy + ch.r * fs + ch.vy * l + 0.5 * G * l * l;
-          if (l <= 0.001) {
-            ctx.fillText(ch.ch, x, y);
-            continue;
-          }
-          // In the air a character flickers through others; it is itself again just before it lands
-          const shown = l > 0.06 ? NOISE[(ch.r * 7 + ch.c * 13 + Math.floor(l * 28)) % NOISE.length] : ch.ch;
-          ctx.save();
-          ctx.translate(x + cw / 2, y + fs / 2);
-          ctx.rotate(ch.spin * l);
-          ctx.fillText(shown, -cw / 2, -fs / 2);
-          ctx.restore();
-        }
-        if (t < F || g > 0) raf = requestAnimationFrame(tick);
-        else {
-          ctx.clearRect(0, 0, W, H);
-          pre.style.visibility = "";
-        }
-      };
-      raf = requestAnimationFrame(tick);
-    });
+    if (icon && pre) pre.textContent = ascii(icon);
   });
 
   // Design's panel: while hovered, the fill steps through each design piece's plate color
@@ -739,14 +661,6 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   .glyph pre { margin: 0; font: inherit; }
 
-  /* Where the characters fall while hovered: reaching past the icon on every side, far below it (the panel clips) */
-  .glyph canvas {
-    position: absolute;
-    left: -8em;
-    top: -4em;
-    width: calc(100% + 16em);
-    height: calc(100% + 34em);
-  }
 
   /* The word stays above the icon */
   .panel > .word { position: relative; z-index: 1; }
