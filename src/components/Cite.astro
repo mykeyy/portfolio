@@ -41,10 +41,18 @@ const ref = references[index];
     color: inherit;
   }
 
-  .cite a:is(:hover, :focus-visible) {
+  .cite a:is(:focus-visible, :active) {
     background: var(--paper);
     color: var(--ink);
     outline: none;
+  }
+
+  /* Hover only where the pointer can hover; on touch a tap would leave it stuck on */
+  @media (hover: hover) {
+    .cite a:hover {
+      background: var(--paper);
+      color: var(--ink);
+    }
   }
 
   /* The source, shown under the citation on screens with room for it */
@@ -77,7 +85,7 @@ const ref = references[index];
   .what { display: block; margin-top: 4px; font-weight: 700; }
   .where { display: block; margin-top: 2px; }
 
-  @media (min-width: 760px) and (hover: hover) {
+  @media (width >= 47.5em) and (hover: hover) {
     .cite:is(:hover, :focus-within) .card { display: block; }
   }
 </style>

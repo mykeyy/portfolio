@@ -28,6 +28,8 @@ const [first, ...rest] = site.name.split(" ");
     height: 100vh;
     height: 100svh;
     overflow: hidden;
+    /* One screen: no rubber-band bounce or pull-to-refresh tug on the cover */
+    overscroll-behavior-y: none;
   }
 
   :global(body.cover main) {

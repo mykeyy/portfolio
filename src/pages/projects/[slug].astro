@@ -20,13 +20,15 @@ const { Content } = await render(project);
 const href = `/projects/${project.id}`;
 const more = (await getLedger()).filter((e) => e.kind === "project" && e.href !== href).slice(0, 3);
 const external = { target: "_blank", rel: "noopener" };
+// The title's longest word caps its size, so it always fits the column
+const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
 ---
 
 <Base title={data.title} description={data.summary} type="article" theme="projects">
   <article class="case wrap">
     <Wipe href="/projects" class="back caps"><Icon name="arrow-left" /> Projects</Wipe>
 
-    <h1 class="display title">{data.title}</h1>
+    <h1 class="display title" style={`--chars: ${longest}`}>{data.title}</h1>
     <p class="summary">{data.summary}</p>
 
     <!-- What people read first: the problem, the role, and the outcome, before any of the story.
@@ -86,13 +88,15 @@ const external = { target: "_blank", rel: "noopener" };
 </Base>
 
 <style>
-  .case { padding-top: clamp(24px, 4vw, 56px); }
+  .case {
+    container-type: inline-size; padding-top: clamp(24px, 4vw, 56px); }
 
-  .back { margin-left: -0.5em; }
+  .back { margin-left: calc(-1 * var(--hang)); }
 
   .title {
     margin-top: clamp(28px, 5vw, 80px);
-    font-size: clamp(3.25rem, 1.2rem + 8vw, 11rem);
+    /* Never wider than the column: the longest word is --chars x 0.565em in Geist Mono */
+    font-size: min(clamp(3.25rem, 1.2rem + 8vw, 11rem), 100cqi / (var(--chars) * 0.565));
     line-height: 0.86;
     max-width: 14ch;
   }
@@ -134,13 +138,16 @@ const external = { target: "_blank", rel: "noopener" };
     display: flex;
     flex-wrap: wrap;
     gap: 4px 8px;
-    margin: -0.25em 0 -0.25em -0.5em;
+    margin: -0.25em 0 -0.25em calc(-1 * var(--hang));
   }
 
   /* A screenshot of a blue page on a blue page would read as part of this one, so the cover gets the 2px rule
      as a frame: it is a picture of the work, not the page itself */
   .cover {
-    width: 100%;
+    /* The frame's edges line up with every rule on the page: it hangs past the column by --hang */
+    width: calc(100% + 2 * var(--hang));
+    max-width: none;
+    margin-inline: calc(-1 * var(--hang));
     height: auto;
     margin-top: clamp(40px, 6vw, 96px);
     border: var(--rule);
@@ -149,11 +156,11 @@ const external = { target: "_blank", rel: "noopener" };
   .body { margin-top: clamp(40px, 6vw, 96px); }
 
   /* From tablet width up, the story starts on the ledger's title column too */
-  @media (min-width: 760px) {
+  @media (width >= 47.5em) {
     .body { margin-left: var(--lead); }
   }
 
-  @media (max-width: 759px) {
+  @media (width < 47.5em) {
     .facts > div { grid-template-columns: 6.5em minmax(0, 1fr); }
   }
 

@@ -54,6 +54,8 @@ const bibtex = [
   `  note   = {${site.domain}}`,
   `}`,
 ].join("\n");
+// The title's longest word caps its size, so it always fits the column
+const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
 ---
 
 <Base title={data.title} description={data.summary} type="article" theme="writing">
@@ -62,7 +64,7 @@ const bibtex = [
   <article class="piece wrap">
     <Wipe href="/writing" class="back caps"><Icon name="arrow-left" /> Writing</Wipe>
 
-    <h1 class="display title">{data.title}</h1>
+    <h1 class="display title" style={`--chars: ${longest}`}>{data.title}</h1>
     <p class="summary">{data.summary}</p>
 
     <!-- The front matter, set like a paper's: who, when, how long, and how to cite it. Labels sit in the ledger's
@@ -303,7 +305,7 @@ const bibtex = [
 
   :global(.wipe.to-top.shown) { opacity: 1; translate: 0 0; pointer-events: auto; }
 
-  @media (min-width: 760px) {
+  @media (width >= 47.5em) {
     .piece:has(.has-contents) ~ :global(.to-top) { display: none; }
   }
 
@@ -311,13 +313,15 @@ const bibtex = [
     :global(.wipe.to-top) { transition: none; }
   }
 
-  .piece { padding-top: clamp(24px, 4vw, 56px); }
+  .piece {
+    container-type: inline-size; padding-top: clamp(24px, 4vw, 56px); }
 
-  .back { margin-left: -0.5em; }
+  .back { margin-left: calc(-1 * var(--hang)); }
 
   .title {
     margin-top: clamp(28px, 5vw, 80px);
-    font-size: clamp(2.5rem, 1rem + 5.5vw, 8rem);
+    /* Never wider than the column: the longest word is --chars x 0.565em in Geist Mono */
+    font-size: min(clamp(2.5rem, 1rem + 5.5vw, 8rem), 100cqi / (var(--chars) * 0.565));
     line-height: 0.9;
     max-width: 18ch;
   }
@@ -497,12 +501,12 @@ const bibtex = [
     display: flex;
     flex-wrap: wrap;
     gap: 4px 8px;
-    margin: 16px 0 0 -0.5em;
+    margin: 16px 0 0 calc(-1 * var(--hang));
   }
 
   /* From tablet width up, the text starts on the ledger's title column (--lead), the same edge as the More
      writing list below it; the contents list fills the ledger's first columns and stays put while you read. */
-  @media (min-width: 760px) {
+  @media (width >= 47.5em) {
     .body {
       display: grid;
       grid-template-columns: calc(var(--lead) - var(--col-gap)) minmax(0, 1fr);
@@ -521,7 +525,7 @@ const bibtex = [
     }
   }
 
-  @media (max-width: 759px) {
+  @media (width < 47.5em) {
     .front > div { grid-template-columns: 7em minmax(0, 1fr); }
 
     .lead-block {

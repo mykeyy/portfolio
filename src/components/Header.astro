@@ -77,7 +77,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   const bars = [...btn.querySelectorAll<HTMLElement>("i")];
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
   // Phones and portrait tablets get the landscape menu: the icon stays flat and the panels are wide bands
-  const flat = matchMedia("(max-width: 759px), (orientation: portrait) and (max-width: 1023px)");
+  const flat = matchMedia("(width < 47.5em), (max-aspect-ratio: 17/20) and (width < 64em)");
   const stand = () => !flat.matches && btn.classList.add("up");
   let open = false;
   // Every open and every close bumps the run. A step that belongs to an older run stops where it is, so the menu can
@@ -191,6 +191,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   async function show() {
     if (open) return;
     open = true;
+    menu.dispatchEvent(new CustomEvent("menu:state", { detail: true }));
     const id = ++run;
     // A close that is still running gets turned around instead of starting over
     const turning = menu.classList.contains("is-open");
@@ -236,6 +237,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   async function hide() {
     if (!open) return;
     open = false;
+    menu.dispatchEvent(new CustomEvent("menu:state", { detail: false }));
     const id = ++run;
     // An opening that has not landed yet gets turned around instead of playing the whole close
     const turning = !menu.classList.contains("landed");
@@ -275,6 +277,32 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   }
 
   const toggle = () => (open ? hide() : show());
+
+  // While the menu is open the page behind it is out of reach (inert: no Tab, no screen reader, no clicks), and
+  // the system Back action closes the menu instead of leaving the page (CloseWatcher: Android Back, Escape).
+  const behind = () => [document.querySelector("main"), document.querySelector("body > footer"), btn.parentElement?.querySelector(".brand")]
+    .filter((el): el is HTMLElement => !!el);
+  type Watcher = { onclose: (() => void) | null; destroy: () => void };
+  const Watch = (globalThis as unknown as { CloseWatcher?: new () => Watcher }).CloseWatcher;
+  let watcher: Watcher | null = null;
+  const guard = (on: boolean) => {
+    behind().forEach((el) => (el.inert = on));
+    if (on && Watch && !watcher) {
+      try {
+        watcher = new Watch();
+        watcher.onclose = () => {
+          watcher = null;
+          hide();
+        };
+      } catch {}
+    }
+    if (!on && watcher) {
+      const w = watcher;
+      watcher = null;
+      w.destroy();
+    }
+  };
+  menu.addEventListener("menu:state", ((e: CustomEvent<boolean>) => guard(e.detail)) as EventListener);
 
   // A click with detail 0 came from the keyboard (Enter or Space)
   let keyboard = false;
@@ -468,8 +496,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   .brand {
     text-decoration: none;
-    padding: 0.25em 0.5em;
-    margin-left: -0.5em;
+    padding: 0.25em var(--hang);
+    margin-left: calc(-1 * var(--hang));
     background: var(--paper);
     color: var(--ink);
   }
@@ -485,6 +513,14 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     margin-left: auto;
     color: var(--paper);
     outline-offset: 6px;
+  }
+
+  /* The tappable area: a 72px square centred on the icon (thumbs need about that much in a corner). The icon
+     itself stays the same size. */
+  .menu-btn::before {
+    content: "";
+    position: absolute;
+    inset: calc((72px - var(--s)) / -2);
   }
 
   .menu-btn i {
@@ -521,6 +557,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     position: fixed;
     inset: 0;
     z-index: 50;
+    overscroll-behavior: contain;
     display: none;
     align-items: center;
     justify-content: center;
@@ -623,7 +660,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     transition: clip-path var(--wash), color 0.5s var(--spring);
   }
 
-  .panel:is(:hover, :focus-visible)::before { transform: scaleY(1); }
+  /* A pointer previews the section on hover; on touch the press shows it (hover there would stick after a tap) */
+  .panel:is(:focus-visible, :active)::before { transform: scaleY(1); }
+  @media (hover: hover) { .panel:hover::before { transform: scaleY(1); } }
 
   /* Projects is white on white: its preview is the RGB title rising in */
   .projects .over .word {
@@ -657,7 +696,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     transition: color var(--wash);
   }
 
-  .panel:is(:hover, :focus-visible) .glyph { color: var(--to-figure); }
+  .panel:is(:focus-visible, :active) .glyph { color: var(--to-figure); }
+  @media (hover: hover) { .panel:hover .glyph { color: var(--to-figure); } }
 
   .glyph pre { margin: 0; font: inherit; }
 
@@ -665,7 +705,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   /* The word stays above the icon */
   .panel > .word { position: relative; z-index: 1; }
   .over { z-index: 1; }
-  .menu.landed .panel:is(:hover, :focus-visible) .over { clip-path: inset(0); }
+  .menu.landed .panel:is(:focus-visible, :active) .over { clip-path: inset(0); }
+  @media (hover: hover) { .menu.landed .panel:hover .over { clip-path: inset(0); } }
 
   /* The section you are in: a thin ground-colored frame inside its panel */
   .panel[aria-current="page"] { box-shadow: inset 0 0 0 clamp(4px, 0.5vw, 8px) var(--paper), inset 0 0 0 calc(clamp(4px, 0.5vw, 8px) + 2px) var(--ink); }
@@ -674,10 +715,10 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   /* Phones and portrait tablets: the landscape menu. The icon stays flat, and its four flat bars become four wide
      bands stacked down the screen, with the words set level at the bottom left. (Matches `flat` in the script.) */
-  @media (max-width: 759px), (orientation: portrait) and (max-width: 1023px) {
+  @media (width < 47.5em), (max-aspect-ratio: 17/20) and (width < 64em) {
     .panels {
       flex-direction: column;
-      width: calc(100vw - 2 * var(--pad));
+      width: calc(100% - 2 * var(--pad));
       gap: clamp(8px, 2svh, 16px);
     }
 

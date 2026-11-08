@@ -54,7 +54,11 @@ const imageUrl = new URL(image, Astro.site);
 <html lang="en" data-theme={theme}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- viewport-fit=cover lets the ground color run under notches and rounded corners; .wrap keeps text inside the
+         safe area (global.css) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Tells browsers (and Samsung Internet's forced dark mode) which scheme each section already is -->
+    <meta name="color-scheme" content={theme === "projects" ? "light" : "dark"} />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -86,10 +90,19 @@ const imageUrl = new URL(image, Astro.site);
 
     <link rel="preload" href="/fonts/geist-mono-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
 
-    <!-- Page transitions. Runs in the head, before the first frame of the new page. Two kinds:
+    <!-- Instant pages: Chrome and Edge open a page in the background while the pointer rests on its link (moderate
+         eagerness, about 200 ms), so the click shows it at once. The API route is never opened ahead. Browsers
+         without speculation rules ignore this. -->
+    <script type="speculationrules" is:inline set:html={JSON.stringify({
+      prerender: [{ where: { and: [{ href_matches: "/*" }, { not: { href_matches: "/api/*" } }] }, eagerness: "moderate" }],
+    })} />
+
+    <!-- Page transitions. Runs in the head, so it is listening before the new page's first frame. Two kinds:
          - Opened from a menu panel: the new page zooms out of that panel's box (a view transition).
          - Any other link: the new page arrives covered in the old page's ground color and an e-ink refresh clears
-           it from the point that was clicked (src/lib/eink.ts, started at the end of <body>).
+           it from the point that was clicked (src/lib/eink.ts, started by the script at the end of <body>).
+         The hand-off from the previous page is read when the page is shown (pagereveal), not when it loads, because
+         a page opened ahead of time loads before the click that writes the hand-off.
          Back and forward, reduced motion, and browsers without these features simply show the page. -->
     <script is:inline>
       (() => {
@@ -104,41 +117,46 @@ const imageUrl = new URL(image, Astro.site);
             return null;
           }
         };
-        const back = performance.getEntriesByType("navigation")[0]?.type === "back_forward";
-        const turn = take("page-turn");
-        if (turn && !calm && !back) {
-          html.classList.add("turning");
-          html.style.setProperty("--turn-ground", turn.ground);
-          window.__turn = turn;
-        }
-        const panel = take("from-panel");
         addEventListener("pagereveal", (e) => {
           const vt = e.viewTransition;
-          if (!vt) return;
           const nav = window.navigation && navigation.activation;
-          const traverse = nav && nav.navigationType === "traverse";
-          if (!panel || traverse || calm) {
+          const traverse = (nav && nav.navigationType === "traverse") ||
+            performance.getEntriesByType("navigation")[0]?.type === "back_forward";
+          const panel = take("from-panel");
+          const turn = take("page-turn");
+
+          // From a menu panel: zoom out of the panel
+          if (vt && panel && !traverse && !calm) {
+            html.classList.add("from-panel");
+            vt.ready.then(() => {
+              const w = innerWidth, h = innerHeight;
+              html.animate(
+                { clipPath: [`inset(${panel.top}px ${w - panel.right}px ${h - panel.bottom}px ${panel.left}px)`, "inset(0px 0px 0px 0px)"] },
+                {
+                  // Quick: the panel already shows the page's colors, so it only has to open
+                  duration: 380,
+                  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+                  pseudoElement: "::view-transition-new(root)",
+                  fill: "both",
+                },
+              );
+            }, () => {});
+            vt.finished.finally(() => html.classList.remove("from-panel"));
+            return;
+          }
+          if (vt) {
             vt.ready.catch(() => {});
             vt.finished.catch(() => {});
             vt.skipTransition();
-            return;
           }
-          const from = panel;
-        html.classList.add("from-panel");
-        vt.ready.then(() => {
-          const w = innerWidth, h = innerHeight;
-          html.animate(
-            { clipPath: [`inset(${from.top}px ${w - from.right}px ${h - from.bottom}px ${from.left}px)`, "inset(0px 0px 0px 0px)"] },
-            {
-              // Quick: the panel already shows the page's colors, so it only has to open
-              duration: 380,
-              easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-              pseudoElement: "::view-transition-new(root)",
-              fill: "both",
-            },
-          );
-        });
-          vt.finished.finally(() => html.classList.remove("from-panel"));
+
+          // Any other link: cover the page in the old ground and hand over to the e-ink refresh
+          if (turn && !traverse && !calm) {
+            html.classList.add("turning");
+            html.style.setProperty("--turn-ground", turn.ground);
+            window.__turn = turn;
+            dispatchEvent(new Event("page:turn"));
+          }
         });
       })();
     </script>
@@ -172,20 +190,28 @@ const imageUrl = new URL(image, Astro.site);
         } catch {}
       });
 
-      // Arriving: run the refresh from the click point
+      // Arriving: run the refresh from the click point. The head script sets it up when the page is shown; this
+      // script may run before that (a page opened ahead of time) or after it (a normal load), so it handles both.
       const html = document.documentElement;
-      const turn = (window as unknown as { __turn?: { x: number; y: number; ground: string } }).__turn;
-      if (turn && html.classList.contains("turning")) {
+      const arrive = () => {
+        const w = window as unknown as { __turn?: { x: number; y: number; ground: string } };
+        const turn = w.__turn;
+        if (!turn || !html.classList.contains("turning")) return;
+        w.__turn = undefined;
         const flash = getComputedStyle(html).getPropertyValue("--paper").trim();
         revealPage({ x: turn.x, y: turn.y }, turn.ground, flash);
         html.classList.remove("turning");
-      }
+      };
+      addEventListener("page:turn", arrive);
+      arrive();
     </script>
 
     <script>
       // Unique visitors, on every page including the cover: a browser's first visit adds one to the total, later
       // visits only read it. Any element with data-visitors shows the number; if the counter can't be reached
       // (offline, or plain `bun run dev`), they keep their dash.
+      // A page opened ahead of time in the background is not a visit until it is actually shown
+      const count = () => {
       let counted = false;
       try {
         counted = localStorage.getItem("visitor-counted") === "1";
@@ -205,6 +231,10 @@ const imageUrl = new URL(image, Astro.site);
           }
         })
         .catch(() => {});
+      };
+      const doc = document as Document & { prerendering?: boolean };
+      if (doc.prerendering) document.addEventListener("prerenderingchange", count, { once: true });
+      else count();
     </script>
   </body>
 </html>

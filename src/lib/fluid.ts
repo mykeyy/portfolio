@@ -28,7 +28,7 @@ const TRACK = [
 ].join(", ");
 
 // The shape of the layout: which breakpoints are on. A change here means blocks jumped.
-const QUERIES = ["(max-width: 759px)", "(orientation: portrait) and (max-width: 1023px)"].map((q) => matchMedia(q));
+const QUERIES = ["(width < 47.5em)", "(max-aspect-ratio: 17/20) and (width < 64em)"].map((q) => matchMedia(q));
 const shape = () =>
   QUERIES.map((q) => (q.matches ? 1 : 0)).join("") +
   [...document.querySelectorAll<HTMLElement>("[data-fluid-shape]")].map((el) => getComputedStyle(el).display).join();
@@ -63,27 +63,51 @@ export function fluid() {
 
   const spring = () => getComputedStyle(document.documentElement).getPropertyValue("--spring-firm").trim() || "ease-out";
 
+  // Phones resize the window's height whenever the address bar shows or hides during a scroll; only a change of
+  // width can change the layout's shape, so height-only resizes never start a morph
+  let width = innerWidth;
+  const running = new Set<Animation>();
+
   addEventListener(
     "resize",
     () => {
       const now = shape();
-      if (now !== last && !calm.matches && !document.documentElement.classList.contains("menu-open")) {
-        const easing = spring();
-        let i = 0;
-        rects.forEach((from, el) => {
-          if (!el.isConnected) return;
+      const widthChanged = innerWidth !== width;
+      width = innerWidth;
+      const doc = document as Document & { activeViewTransition?: unknown };
+      if (
+        widthChanged &&
+        now !== last &&
+        !calm.matches &&
+        !document.documentElement.classList.contains("menu-open") &&
+        !doc.activeViewTransition
+      ) {
+        // Three passes, so no measurement is taken mid-animation and nothing is measured between writes:
+        // 1. stop any morph still running (a quick cross back would otherwise measure a block mid-slide),
+        running.forEach((a) => a.cancel());
+        running.clear();
+        // 2. read every block's new place,
+        const moves = [...rects].flatMap(([el, from]) => {
+          if (!el.isConnected) return [];
           const to = el.getBoundingClientRect();
           const dx = from.left - to.left, dy = from.top - to.top;
           const s = (el as HTMLElement).hasAttribute("data-fluid-scale") && to.width ? from.width / to.width : 1;
-          if (Math.abs(dx) + Math.abs(dy) < 2 && Math.abs(s - 1) < 0.01) return;
-          if (to.bottom < -100 || to.top > innerHeight + 100) return;
-          el.animate(
-            [
-              { translate: `${dx}px ${dy}px`, scale: String(s), transformOrigin: "0 0" },
-              { translate: "0px 0px", scale: "1", transformOrigin: "0 0" },
-            ],
-            { duration: 560, delay: Math.min(i++ * 12, 120), easing, fill: "backwards" },
-          );
+          if (Math.abs(dx) + Math.abs(dy) < 2 && Math.abs(s - 1) < 0.01) return [];
+          if (to.bottom < -100 || to.top > innerHeight + 100) return [];
+          return [{ el: el as HTMLElement, dx, dy, s }];
+        });
+        // 3. then start every slide. The scale origin is a plain style, not part of the animation, so the browser
+        // can run the animation off the main thread.
+        const easing = spring();
+        moves.forEach(({ el, dx, dy, s }, i) => {
+          const keyframes: Keyframe[] =
+            s === 1
+              ? [{ translate: `${dx}px ${dy}px` }, { translate: "0px 0px" }]
+              : [{ translate: `${dx}px ${dy}px`, scale: String(s) }, { translate: "0px 0px", scale: "1" }];
+          if (s !== 1) el.style.transformOrigin = "0 0";
+          const a = el.animate(keyframes, { duration: 560, delay: Math.min(i * 12, 120), easing, fill: "backwards" });
+          running.add(a);
+          a.finished.then(() => running.delete(a), () => running.delete(a));
         });
       }
       last = now;

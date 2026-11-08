@@ -8,7 +8,7 @@ import Base from "../layouts/Base.astro";
   <section class="lost wrap">
     <h1 class="display">404</h1>
     <p class="caps">No entry at this address.</p>
-    <Wipe href="/" class="caps home">Back to the ledger <Icon name="arrow-right" /></Wipe>
+    <Wipe href="/" class="caps home">Back home <Icon name="arrow-right" /></Wipe>
   </section>
 </Base>
 
@@ -22,5 +22,5 @@ import Base from "../layouts/Base.astro";
 
   p { margin-top: clamp(16px, 2vw, 28px); font-size: clamp(1rem, 0.8rem + 0.8vw, 1.5rem); }
 
-  .home { margin: 12px 0 0 -0.5em; }
+  .home { margin: 12px 0 0 calc(-1 * var(--hang)); }
 </style>

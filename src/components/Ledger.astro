@@ -129,10 +129,15 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
     flex-wrap: wrap;
     gap: 4px;
     margin-bottom: clamp(14px, 1.6vw, 22px);
-    margin-left: -0.5em;
+    margin-left: calc(-1 * var(--hang));
   }
 
   .filters[hidden] { display: none; }
+
+  /* On touch screens each filter is at least 44px tall, a comfortable thumb target */
+  @media (pointer: coarse) {
+    .filters :global(.wipe) { min-height: 44px; }
+  }
 
   .n { font-variant-numeric: tabular-nums; }
 
@@ -209,7 +214,7 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
   .empty { padding: 22px var(--hang); margin-inline: calc(-1 * var(--hang)); border-top: var(--rule); border-bottom: var(--rule); }
 
   /* Narrow screens: number, kind and year share the top line; the title and its line take the full width */
-  @media (max-width: 759px) {
+  @media (width < 47.5em) {
     .head { display: none; }
     .rows { border-top: var(--rule); }
 

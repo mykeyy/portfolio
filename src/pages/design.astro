@@ -397,7 +397,7 @@ const sizes = {
     white-space: nowrap;
   }
 
-  .ctrl { display: flex; gap: 4px; margin-right: -0.5em; }
+  .ctrl { display: flex; gap: 4px; margin-right: calc(-1 * var(--hang)); }
 
   @media (prefers-reduced-motion: reduce) {
     .viewer { transition: none; }
@@ -415,7 +415,7 @@ const sizes = {
     .pieces { grid-template-columns: minmax(0, 1fr); }
   }
 
-  @media (max-width: 759px) {
+  @media (width < 47.5em) {
     figcaption {
       grid-template-columns: auto auto minmax(0, 1fr);
       grid-template-areas: "no year tools" "title title title" "sum sum sum";

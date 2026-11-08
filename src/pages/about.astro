@@ -55,11 +55,11 @@ import { site } from "../site";
     line-height: 1.4;
   }
 
-  @media (min-width: 760px) {
+  @media (width >= 47.5em) {
     .prose { margin-left: var(--lead); }
   }
 
-  @media (max-width: 759px) {
+  @media (width < 47.5em) {
     .facts > div { grid-template-columns: 6.5em minmax(0, 1fr); }
   }
 </style>

@@ -43,6 +43,9 @@ html.takeover { transition: --ink var(--dur-slow) var(--spring), --paper var(--d
   html.takeover { transition: none; }
 }
 
+/* Taps respond at once: no double-tap-to-zoom wait on links and buttons */
+html { touch-action: manipulation; }
+
 :root {
   --blue: #061ecf;
   --ink: var(--blue);
@@ -164,7 +167,8 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   width: 100%;
   max-width: var(--max);
   margin-inline: auto;
-  padding-inline: var(--pad);
+  /* At least the safe area: in landscape a phone's notch or rounded corner can take more than the padding */
+  padding-inline: max(var(--pad), env(safe-area-inset-left)) max(var(--pad), env(safe-area-inset-right));
 }
 
 .caps { text-transform: uppercase; letter-spacing: 0.04em; }
@@ -232,7 +236,7 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  padding: 0.25em 0.5em;
+  padding: 0.25em var(--hang);
 }
 
 .wipe > .ink {
@@ -245,8 +249,19 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   transition: clip-path var(--wipe);
 }
 
-.wipe:is(:hover, :focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"])::before { transform: scaleX(1); }
-.wipe:is(:hover, :focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"]) > .ink { clip-path: inset(0); }
+.wipe:is(:focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"])::before { transform: scaleX(1); }
+.wipe:is(:focus-visible, :active, [aria-current="page"], [aria-current="location"], [aria-pressed="true"]) > .ink { clip-path: inset(0); }
+
+/* Hover only where the pointer can hover: on a touch screen a tap would leave the bar stuck on. A press still
+   shows it there (:active above). */
+@media (hover: hover) {
+  .wipe:hover::before { transform: scaleX(1); }
+  .wipe:hover > .ink { clip-path: inset(0); }
+}
+
+/* Contrast themes (Windows forced colors) drop backgrounds, so the bar vanishes; a transparent outline turns into
+   a visible one there and stays invisible everywhere else */
+.wipe:focus-visible { outline: 2px solid transparent; outline-offset: 2px; }
 
 /* Skip link: hidden until a keyboard user tabs to it */
 .skip {
@@ -276,7 +291,9 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   line-height: 1.6;
 }
 
-.prose > :where(p, ul, ol, blockquote, h2, h3, h4, hr, .footnotes) { max-width: 68ch; }
+.prose > :where(p, ul, ol, blockquote, h2, h3, h4) { max-width: 68ch; }
+/* Lines (a section break, the footnotes rule) run the full column like every other rule; the notes keep the measure */
+.prose .footnotes > * { max-width: 68ch; }
 .prose > * + * { margin-top: 1.1em; }
 
 .prose h2 {
@@ -338,7 +355,8 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
     transition: --p var(--wipe);
   }
 
-  .prose a:is(:hover, :focus-visible, :active) { --p: 100%; outline: none; }
+  .prose a:is(:focus-visible, :active) { --p: 100%; outline: none; }
+  @media (hover: hover) { .prose a:hover { --p: 100%; } }
 }
 
 .prose code {
@@ -375,7 +393,7 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   border-left: var(--rule);
 }
 
-.prose hr { border: 0; border-top: var(--rule); margin-block: 2.5em; }
+.prose hr { border: 0; border-top: var(--rule); margin-block: 2.5em; margin-inline: calc(-1 * var(--hang)); }
 
 .prose table {
   width: 100%;
@@ -384,13 +402,17 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   font-weight: 700;
   font-size: 0.78em;
   font-variant-numeric: tabular-nums;
+  /* Wider than the column (a phone): the table scrolls sideways inside its own box instead of stretching the page */
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .prose th { text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
 .prose :is(th, td) { padding: 0.65em 1em 0.65em 0; border-bottom: var(--rule); vertical-align: top; }
 
 /* Narrow screens: cells keep their values on one line and the table scrolls sideways inside its own box */
-@media (max-width: 759px) {
+@media (width < 47.5em) {
   .prose table { display: block; overflow-x: auto; }
   .prose :is(th, td) { white-space: nowrap; }
 }
@@ -425,10 +447,13 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5.5V19'/%3E%3Cpath d='M18 11C18 11 13.5811 5.00001 12 5C10.4188 4.99999 6 11 6 11'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-.prose a[data-footnote-backref]:is(:hover, :focus-visible) { background: var(--paper); color: var(--ink); }
+.prose a[data-footnote-backref]:is(:focus-visible, :active) { background: var(--paper); color: var(--ink); }
+@media (hover: hover) { .prose a[data-footnote-backref]:hover { background: var(--paper); color: var(--ink); } }
 .prose .footnotes {
   margin-top: 3em;
-  padding-top: 1.2em;
+  /* Its rule hangs past the column like every other line; the notes stay on the column edge */
+  margin-inline: calc(-1 * var(--hang));
+  padding: 1.2em var(--hang) 0;
   border-top: var(--rule);
   font-size: 0.85em;
 }
