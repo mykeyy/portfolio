@@ -3,6 +3,8 @@
 // The menu: the four bars stand up on hover; on click, square cells flicker white and blue until they cover the
 // screen, then each bar flies out of the icon and grows into a tall panel, one per section. Without JavaScript the
 // button is a link to #menu and the panels simply show.
+import { getCollection } from "astro:content";
+import { plateInk } from "../lib/plate";
 import { site } from "../site";
 
 interface Props {
@@ -21,6 +23,12 @@ const sections = [
   { href: "/design", label: "Design", ground: "#061ecf", figure: "#ffffff", icon: "design" },
   { href: "/about", label: "About", ground: "#061ecf", figure: "#ffffff", icon: "about" },
 ];
+// Design's panel cycles through the plate colors of the design pieces while hovered: the same idea as the Design
+// page, where the whole page takes on each piece's color.
+const plates = (await getCollection("designs"))
+  .filter((d) => import.meta.env.DEV || !d.data.draft)
+  .map((d) => [d.data.plate, plateInk(d.data.plate)]);
+const cycle = JSON.stringify([["#061ecf", "#ffffff"], ...plates]);
 const current = (href: string) => (path === href || path.startsWith(`${href}/`) ? "page" : undefined);
 ---
 
@@ -45,8 +53,12 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
             aria-current={current(s.href)}
             data-panel
             style={`--to-ground: ${s.ground}; --to-figure: ${s.figure}`}
+            data-cycle={s.icon === "design" ? cycle : undefined}
           >
-            <pre class="glyph" aria-hidden="true" data-glyph={s.icon} />
+            <span class="glyph" aria-hidden="true" data-glyph={s.icon}>
+              <pre />
+              <canvas />
+            </span>
             <span class="word">{s.label}</span>
             <span class="over" aria-hidden="true">
               <span class="word">{s.label}</span>
@@ -254,6 +266,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
       if (id !== run) return;
     }
     btn.classList.remove("gone");
+    canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
     menu.classList.remove("is-open", "covering", "clearing", "flying");
     panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
     document.documentElement.classList.remove("menu-open");
@@ -348,8 +361,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   const NOISE = "#%@*+=-:/\\<>[]{}01";
   const COLS = 34, ROWS = 20; // a monospace cell is about 0.6 as wide as it is tall, so this grid is near square
   const ICONS: Record<string, { fill: string[]; cut: string[] }> = {
-    // A box, its edges cut through
-    projects: { fill: ["M12 1.5L21.5 6.5V17.5L12 22.5L2.5 17.5V6.5Z"], cut: ["M2.5 6.5L12 11.5L21.5 6.5", "M12 11.5V22.5"] },
+    // A code window: its title bar, and </> inside
+    projects: {
+      fill: ["M1.5 3.5H22.5V20.5H1.5Z"],
+      cut: ["M1.5 7.6H22.5", "M8.6 11L5.6 14.2L8.6 17.4", "M13.4 10.4L10.6 18", "M15.4 11L18.4 14.2L15.4 17.4"],
+    },
     // A pen nib with its slit and breather hole
     writing: {
       fill: ["M12 1.5L19 9L16 19.5H8L5 9Z", "M7 20.5H17V23H7Z"],
@@ -401,28 +417,116 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     return out;
   }
 
-  menu.querySelectorAll<HTMLElement>("[data-glyph]").forEach((pre) => {
-    const icon = ICONS[pre.dataset.glyph ?? ""];
-    if (!icon) return;
+  // Hover: the icon's characters jump and fall out of the panel, tumbling and flickering as they go, then the whole
+  // fall plays back and they land home, in the same places, as the icon again. It starts where the pointer came in
+  // and spreads across the icon from there. Drawn on a canvas that reaches past the icon (the panel clips it).
+  // The static icon is plain text in a <pre>; the canvas only draws while the characters are in the air.
+  menu.querySelectorAll<HTMLElement>("[data-glyph]").forEach((box) => {
+    const icon = ICONS[box.dataset.glyph ?? ""];
+    const pre = box.querySelector("pre");
+    const cv = box.querySelector("canvas");
+    if (!icon || !pre || !cv) return;
     const art = ascii(icon);
     pre.textContent = art;
+    const chars = art.split("\n").flatMap((line, r) =>
+      [...line].flatMap((ch, c) => (ch === " " ? [] : [{ ch, r, c, vx: 0, vy: 0, spin: 0, delay: 0 }])),
+    );
     let raf = 0;
-    pre.closest("[data-panel]")?.addEventListener("pointerenter", () => {
+    const T = 0.62; // seconds in the air
+    const SPREAD = 0.22; // the last character leaves this long after the first
+    const BACK = 1.8; // the return plays this much faster
+
+    box.closest("[data-panel]")?.addEventListener("pointerenter", (e) => {
       if (calm.matches) return;
       cancelAnimationFrame(raf);
-      const settle = Array.from(art, () => 40 + Math.random() * 300);
+      const style = getComputedStyle(pre);
+      const fs = parseFloat(style.fontSize);
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const W = cv.offsetWidth, H = cv.offsetHeight;
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      const ctx = cv.getContext("2d")!;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `${style.fontWeight} ${fs}px ${style.fontFamily}`;
+      ctx.textBaseline = "top";
+      const cw = ctx.measureText("M").width;
+      // The canvas reaches 8em left and 4em above the icon (see .glyph canvas)
+      const ox = 8 * fs, oy = 4 * fs;
+      const br = box.getBoundingClientRect();
+      const px = ((e as PointerEvent).clientX - br.left) / br.width * pre.offsetWidth + ox;
+      const py = ((e as PointerEvent).clientY - br.top) / br.height * pre.offsetHeight + oy;
+      const far = Math.hypot(pre.offsetWidth, pre.offsetHeight) || 1;
+      const G = fs * 160; // gravity, scaled to the type
+      chars.forEach((ch) => {
+        ch.delay = (Math.hypot(ox + ch.c * cw - px, oy + ch.r * fs - py) / far) * SPREAD;
+        const angle = ((-90 + (Math.random() - 0.5) * 80) * Math.PI) / 180;
+        const speed = fs * (12 + Math.random() * 32);
+        ch.vx = Math.cos(angle) * speed;
+        ch.vy = Math.sin(angle) * speed;
+        ch.spin = (Math.random() - 0.5) * 9;
+      });
+      const F = T + SPREAD;
       const t0 = performance.now();
+      pre.style.visibility = "hidden";
       const tick = (now: number) => {
-        const t = now - t0;
-        let done = true;
-        pre.textContent = Array.from(art, (ch, i) => {
-          if (ch === " " || ch === "\n" || t >= settle[i]) return ch;
-          done = false;
-          return NOISE[(Math.random() * NOISE.length) | 0];
-        }).join("");
-        if (!done) raf = requestAnimationFrame(tick);
+        // A frame's timestamp can come from just before the hover began, so time never runs below zero
+        const t = Math.max(0, (now - t0) / 1000);
+        const g = t < F ? t : F - (t - F) * BACK;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = getComputedStyle(pre).color;
+        for (const ch of chars) {
+          const l = Math.min(T, Math.max(0, g - ch.delay));
+          const x = ox + ch.c * cw + ch.vx * l;
+          const y = oy + ch.r * fs + ch.vy * l + 0.5 * G * l * l;
+          if (l <= 0.001) {
+            ctx.fillText(ch.ch, x, y);
+            continue;
+          }
+          // In the air a character flickers through others; it is itself again just before it lands
+          const shown = l > 0.06 ? NOISE[(ch.r * 7 + ch.c * 13 + Math.floor(l * 28)) % NOISE.length] : ch.ch;
+          ctx.save();
+          ctx.translate(x + cw / 2, y + fs / 2);
+          ctx.rotate(ch.spin * l);
+          ctx.fillText(shown, -cw / 2, -fs / 2);
+          ctx.restore();
+        }
+        if (t < F || g > 0) raf = requestAnimationFrame(tick);
+        else {
+          ctx.clearRect(0, 0, W, H);
+          pre.style.visibility = "";
+        }
       };
       raf = requestAnimationFrame(tick);
+    });
+  });
+
+  // Design's panel: while hovered, the fill steps through each design piece's plate color
+  menu.querySelectorAll<HTMLElement>("[data-cycle]").forEach((panel) => {
+    let colors: [string, string][] = [];
+    try {
+      colors = JSON.parse(panel.dataset.cycle ?? "[]");
+    } catch {}
+    if (colors.length < 2) return;
+    let timer = 0;
+    let i = 0;
+    const paint = () => {
+      const [ground, figure] = colors[i % colors.length];
+      panel.style.setProperty("--to-ground", ground);
+      panel.style.setProperty("--to-figure", figure);
+    };
+    panel.addEventListener("pointerenter", () => {
+      if (calm.matches) return;
+      clearInterval(timer);
+      i = 0;
+      timer = window.setInterval(() => {
+        i++;
+        paint();
+      }, 700);
+    });
+    panel.addEventListener("pointerleave", () => {
+      clearInterval(timer);
+      i = 0;
+      paint();
     });
   });
 
@@ -581,7 +685,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     background: var(--to-ground, var(--ink));
     transform: scaleY(0);
     transform-origin: bottom;
-    transition: transform var(--wash);
+    transition: transform var(--wash), background-color 0.5s var(--spring);
   }
 
   .over {
@@ -594,7 +698,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     color: var(--to-figure, var(--paper));
     pointer-events: none;
     clip-path: inset(100% 0 0 0);
-    transition: clip-path var(--wash);
+    transition: clip-path var(--wash), color 0.5s var(--spring);
   }
 
   .panel:is(:hover, :focus-visible)::before { transform: scaleY(1); }
@@ -619,6 +723,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     font-weight: 700;
     font-size: calc(var(--pw) * 0.068);
     line-height: 1;
+    white-space: pre;
     letter-spacing: 0;
     color: var(--ink);
     rotate: -14deg;
@@ -631,6 +736,17 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   }
 
   .panel:is(:hover, :focus-visible) .glyph { color: var(--to-figure); }
+
+  .glyph pre { margin: 0; font: inherit; }
+
+  /* Where the characters fall while hovered: reaching past the icon on every side, far below it (the panel clips) */
+  .glyph canvas {
+    position: absolute;
+    left: -8em;
+    top: -4em;
+    width: calc(100% + 16em);
+    height: calc(100% + 34em);
+  }
 
   /* The word stays above the icon */
   .panel > .word { position: relative; z-index: 1; }

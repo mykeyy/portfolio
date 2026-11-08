@@ -7,7 +7,12 @@ const [first, ...rest] = site.name.split(" ");
 
 <Base cover>
   <section class="intro wrap">
-    <h1 class="name display">{first}<br class="c" /> {rest.join(" ")}</h1>
+    <!-- Each word moves on its own when the name breaks onto two lines (or back), so NISHIKAWA slides down under
+         MYKEY instead of jumping there (src/lib/fluid.ts) -->
+    <h1 class="name display">
+      <span class="w" data-fluid data-fluid-scale>{first}</span><br class="c" data-fluid-shape />
+      <span class="w" data-fluid data-fluid-scale>{rest.join(" ")}</span>
+    </h1>
     <p class="line caps">
       <span>Independent developer and designer</span>
       <span>Philippines, UTC+8</span>
@@ -48,6 +53,9 @@ const [first, ...rest] = site.name.split(" ");
   }
 
   .name .c { display: none; }
+
+  /* Words are boxes so they can move on their own */
+  .name .w { display: inline-block; }
 
   @container (max-width: 520px) {
     .name { --fit: 5.0669; line-height: 0.94; margin-left: -0.0469em; }

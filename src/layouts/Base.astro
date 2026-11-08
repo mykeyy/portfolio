@@ -153,6 +153,10 @@ const imageUrl = new URL(image, Astro.site);
 
     <script>
       import { revealPage } from "../lib/eink";
+      import { fluid } from "../lib/fluid";
+
+      // Phone, tablet and desktop flow into each other when the window changes size (src/lib/fluid.ts)
+      fluid();
 
       // Leaving: remember where the click was and the color of this page's ground, for the next page's refresh.
       // Only plain clicks on links to another page of this site; the menu panels have their own transition.
