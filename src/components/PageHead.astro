@@ -1,4 +1,5 @@
 ---
+import { bearing } from "../lib/bearing";
 // The top of a section page: the section's name in the display face, as large as the width allows, with a short mono note.
 // `rgb` sets the name in a red-green-blue gradient with a matching band under it (Projects only).
 interface Props {
@@ -9,12 +10,13 @@ interface Props {
 
 const { title, note, rgb = false } = Astro.props;
 // The longest word sets a ceiling on the size, so it always fits the column (see h1 below)
+const pull = bearing(title);
 const chars = Math.max(...title.split(/\s+/).map((w) => w.length));
 ---
 
 <header class:list={["page-head wrap", { rgb }]}>
   <div class="row">
-    <h1 class="display" style={`--chars: ${chars}`}>{title}</h1>
+    <h1 class="display" style={`--chars: ${chars}; --pull: ${pull}em`}>{title}</h1>
     {note && <p class="note caps">{note}</p>}
   </div>
   {rgb && <div class="band" aria-hidden="true" />}
@@ -39,6 +41,8 @@ const chars = Math.max(...title.split(/\s+/).map((w) => w.length));
     /* As large as the width allows, but never wider than the column: every Geist Mono letter is 0.6em less the
        0.035em tracking, so the longest word is --chars x 0.565em */
     font-size: min(clamp(4.5rem, 1.5rem + 11vw, 14rem), 100cqi / (var(--chars) * 0.565));
+    /* The first letter's ink sits on the column edge (src/lib/bearing.ts) */
+    margin-left: calc(-1 * var(--pull, 0em));
     line-height: 0.84;
   }
 

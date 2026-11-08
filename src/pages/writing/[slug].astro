@@ -1,4 +1,5 @@
 ---
+import { bearing } from "../../lib/bearing";
 import { render } from "astro:content";
 import Chart from "../../components/Chart.astro";
 import Cite from "../../components/Cite.astro";
@@ -55,6 +56,7 @@ const bibtex = [
   `}`,
 ].join("\n");
 // The title's longest word caps its size, so it always fits the column
+const pull = bearing(data.title);
 const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
 ---
 
@@ -64,7 +66,7 @@ const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
   <article class="piece wrap">
     <Wipe href="/writing" class="back caps"><Icon name="arrow-left" /> Writing</Wipe>
 
-    <h1 class="display title" style={`--chars: ${longest}`}>{data.title}</h1>
+    <h1 class="display title" style={`--chars: ${longest}; --pull: ${pull}em`}>{data.title}</h1>
     <p class="summary">{data.summary}</p>
 
     <!-- The front matter, set like a paper's: who, when, how long, and how to cite it. Labels sit in the ledger's
@@ -321,6 +323,8 @@ const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
   .title {
     margin-top: clamp(28px, 5vw, 80px);
     /* Never wider than the column: the longest word is --chars x 0.565em in Geist Mono */
+    /* The first letter's ink sits on the column edge (src/lib/bearing.ts) */
+    margin-left: calc(-1 * var(--pull, 0em));
     font-size: min(clamp(2.5rem, 1rem + 5.5vw, 8rem), 100cqi / (var(--chars) * 0.565));
     line-height: 0.9;
     max-width: 18ch;

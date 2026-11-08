@@ -1,4 +1,5 @@
 ---
+import { bearing } from "../../lib/bearing";
 import { render } from "astro:content";
 import { Image } from "astro:assets";
 import Chart from "../../components/Chart.astro";
@@ -21,6 +22,7 @@ const href = `/projects/${project.id}`;
 const more = (await getLedger()).filter((e) => e.kind === "project" && e.href !== href).slice(0, 3);
 const external = { target: "_blank", rel: "noopener" };
 // The title's longest word caps its size, so it always fits the column
+const pull = bearing(data.title);
 const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
 ---
 
@@ -28,7 +30,7 @@ const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
   <article class="case wrap">
     <Wipe href="/projects" class="back caps"><Icon name="arrow-left" /> Projects</Wipe>
 
-    <h1 class="display title" style={`--chars: ${longest}`}>{data.title}</h1>
+    <h1 class="display title" style={`--chars: ${longest}; --pull: ${pull}em`}>{data.title}</h1>
     <p class="summary">{data.summary}</p>
 
     <!-- What people read first: the problem, the role, and the outcome, before any of the story.
@@ -96,6 +98,8 @@ const longest = Math.max(...data.title.split(/\s+/).map((w) => w.length));
   .title {
     margin-top: clamp(28px, 5vw, 80px);
     /* Never wider than the column: the longest word is --chars x 0.565em in Geist Mono */
+    /* The first letter's ink sits on the column edge (src/lib/bearing.ts) */
+    margin-left: calc(-1 * var(--pull, 0em));
     font-size: min(clamp(3.25rem, 1.2rem + 8vw, 11rem), 100cqi / (var(--chars) * 0.565));
     line-height: 0.86;
     max-width: 14ch;
