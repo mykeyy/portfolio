@@ -130,8 +130,9 @@ const imageUrl = new URL(image, Astro.site);
           html.animate(
             { clipPath: [`inset(${from.top}px ${w - from.right}px ${h - from.bottom}px ${from.left}px)`, "inset(0px 0px 0px 0px)"] },
             {
-              duration: 620,
-              easing: getComputedStyle(html).getPropertyValue("--spring-firm").trim() || "ease-out",
+              // Quick: the panel already shows the page's colors, so it only has to open
+              duration: 380,
+              easing: "cubic-bezier(0.16, 1, 0.3, 1)",
               pseudoElement: "::view-transition-new(root)",
               fill: "both",
             },
