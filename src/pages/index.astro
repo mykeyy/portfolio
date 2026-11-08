@@ -10,8 +10,10 @@ const [first, ...rest] = site.name.split(" ");
     <!-- Each word moves on its own when the name breaks onto two lines (or back), so NISHIKAWA slides down under
          MYKEY instead of jumping there (src/lib/fluid.ts) -->
     <h1 class="name display">
-      <span class="w" data-fluid data-fluid-scale>{first}</span><br class="c" data-fluid-shape />
-      <span class="w" data-fluid data-fluid-scale>{rest.join(" ")}</span>
+      <span class="w" data-fluid data-fluid-scale>{first}</span>{" "}<br class="c" data-fluid-shape /><span
+        class="w"
+        data-fluid
+        data-fluid-scale>{rest.join(" ")}</span>
     </h1>
     <p class="line caps">
       <span>Independent developer and designer</span>
