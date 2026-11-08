@@ -24,7 +24,9 @@ const year = new Date().getFullYear();
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    padding-block: 18px clamp(16px, 2vw, 28px);
+    /* The rule hangs past the column like every other line; the text stays on the column edge */
+    margin-inline: calc(-1 * var(--hang));
+    padding: 18px var(--hang) clamp(16px, 2vw, 28px);
     border-top: var(--rule);
   }
 

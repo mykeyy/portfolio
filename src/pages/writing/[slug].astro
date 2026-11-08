@@ -332,8 +332,10 @@ const bibtex = [
   }
 
   /* Front matter, abstract, and findings share one table grammar: label on the left, value on --lead */
+  /* The rules hang past the column like every other line (contents, ledger); the text stays on the column edge */
   .front {
     margin-top: clamp(32px, 4vw, 64px);
+    margin-inline: calc(-1 * var(--hang));
     border-top: var(--rule);
   }
 
@@ -346,7 +348,7 @@ const bibtex = [
   }
 
   .front > div {
-    padding: 12px 0;
+    padding: 12px var(--hang);
     border-bottom: var(--rule);
   }
 
@@ -359,7 +361,8 @@ const bibtex = [
   }
 
   .lead-block {
-    padding: clamp(18px, 2vw, 28px) 0;
+    margin-inline: calc(-1 * var(--hang));
+    padding: clamp(18px, 2vw, 28px) var(--hang);
     border-bottom: var(--rule);
   }
 
@@ -441,6 +444,7 @@ const bibtex = [
 
   .references ol {
     list-style: none;
+    margin-inline: calc(-1 * var(--hang));
     border-top: var(--rule);
   }
 
@@ -448,7 +452,7 @@ const bibtex = [
     display: grid;
     grid-template-columns: 3.5em minmax(0, 1fr);
     gap: 12px;
-    padding: 12px 0;
+    padding: 12px var(--hang);
     border-bottom: var(--rule);
     font-family: var(--text);
     font-weight: 400;
