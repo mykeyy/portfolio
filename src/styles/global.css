@@ -497,7 +497,7 @@ button { font: inherit; color: inherit; text-transform: inherit; letter-spacing:
    Opening a section from the menu zooms the new page out of the panel you clicked: a cross-document view
    transition whose new page the script grows from the panel's box, over the old page held still.
    Every other link: the new page arrives covered in the old page's ground color, an e-ink refresh clears it from
-   the point you clicked (src/lib/eink.ts), and the page's title rises into place as the wave passes. */
+   the point you clicked (src/lib/eink.ts). */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }
 
@@ -519,16 +519,6 @@ html.turning body::after {
 }
 
 @keyframes turn-guard { to { visibility: hidden; } }
-
-/* The title rises into place from its baseline, as the menu words do */
-html.arriving main h1 {
-  animation: title-rise var(--dur-slow) var(--spring-firm) 0.18s both;
-}
-
-@keyframes title-rise {
-  from { clip-path: inset(100% -1em -0.2em -1em); translate: 0 0.35em; }
-  to { clip-path: inset(-0.2em -1em -0.2em -1em); translate: 0 0; }
-}
 
 /* Filtering a list: rows glide to their new places, leaving rows fade out, arriving rows fade in */
 html:active-view-transition-type(filter)::view-transition-old(root),

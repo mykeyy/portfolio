@@ -69,7 +69,13 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   const flat = matchMedia("(max-width: 759px), (orientation: portrait) and (max-width: 1023px)");
   const stand = () => !flat.matches && btn.classList.add("up");
   let open = false;
-  let busy = false;
+  // Every open and every close bumps the run. A step that belongs to an older run stops where it is, so the menu can
+  // be turned around at any moment: mid-opening, a click, Space, Esc, or the background sends it straight back
+  // from wherever it got to, and the other way round.
+  let run = 0;
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  // How fast an interrupted flight plays itself back home
+  const REWIND = -2.6;
 
   const color = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   // Leaving is quicker than arriving and accelerates into the icon
@@ -79,9 +85,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   // figure color once (the erase) and then settles on the new state: the ground color when covering, the page
   // underneath when clearing. One flash per square, so only the thin wave front is ever white.
   const FLASH = 55;
+  let wave = 0;
   // Opening, the wave spreads out from the menu button; closing is the same wave played backwards, clearing from
-  // the far corner in toward the button as the panels fly home.
+  // the far corner in toward the button as the panels fly home. A newer wave stops an older one.
   function cells(cover: boolean, duration = 420) {
+    const id = ++wave;
     return new Promise<void>((done) => {
       // Everything is drawn in whole device pixels. At 125% or 150% display scaling a cell of, say, 14 CSS px is
       // 17.5 device pixels, and edges that fall between pixels leave faint seams between neighbouring cells. So the
@@ -110,6 +118,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
       const t0 = performance.now();
 
       const frame = (now: number) => {
+        if (id !== wave) return done();
         const t = now - t0;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < starts.length; i++) {
@@ -131,33 +140,49 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     });
   }
 
+  const flights = () => panels.flatMap((p) => p.getAnimations());
+  const landed = (anims: Animation[]) => Promise.all(anims.map((a) => a.finished.catch(() => {})));
+
   // Each panel starts as its bar in the icon and grows into place (or shrinks back), slightly staggered.
   function fly(out: boolean) {
+    // Any earlier flight is done with; measure the panels where they really sit
+    panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
     const from = bars.map((b) => b.getBoundingClientRect());
     // The bars become the panels, so the icon leaves as they fly out (and returns once they land back in it)
     if (out) btn.classList.add("gone");
-    return Promise.all(
+    return landed(
       panels.map((panel, i) => {
         const to = panel.getBoundingClientRect();
         const f = from[i];
         const start = `translate(${f.left - to.left}px, ${f.top - to.top}px) scale(${f.width / to.width}, ${f.height / to.height})`;
         const frames = out ? [{ transform: start }, { transform: "none" }] : [{ transform: "none" }, { transform: start }];
-        // Home again is the flight out played backwards: same length, mirrored easing, reversed stagger
         // Out on the firm spring (a hair of overshoot as they land); home faster, accelerating into the icon
         return panel.animate(frames, {
           duration: out ? 560 : 320,
           delay: out ? i * 45 : (panels.length - 1 - i) * 30,
           easing: out ? color("--spring-firm") : EASE_IN,
           fill: "both",
-        }).finished;
+        });
       }),
     );
   }
 
+  // Turn the flights that are under way around, quickly, from wherever each panel is right now
+  function rewind() {
+    const anims = flights();
+    anims.forEach((a) => {
+      a.playbackRate = REWIND;
+      a.play();
+    });
+    return landed(anims);
+  }
+
   async function show() {
-    if (open || busy) return;
-    busy = true;
+    if (open) return;
     open = true;
+    const id = ++run;
+    // A close that is still running gets turned around instead of starting over
+    const turning = menu.classList.contains("is-open");
     btn.setAttribute("aria-expanded", "true");
     // The bars stand up while the cells run, so they are upright by the time the panels fly out of them
     stand();
@@ -166,61 +191,85 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
     if (calm.matches) {
       btn.classList.add("gone");
+      menu.classList.remove("covering", "clearing");
+      menu.classList.add("landed");
+    } else if (turning) {
+      menu.classList.remove("clearing");
+      menu.classList.add("covering", "flying");
+      btn.classList.add("gone");
+      await Promise.all([cells(true, 220), rewind()]);
+      if (id !== run) return;
+      panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
+      menu.classList.remove("covering", "flying");
       menu.classList.add("landed");
     } else {
       // The panels start flying out while the wave is still finishing, so the refresh and the panels overlap
       menu.classList.add("covering");
-      const wave = cells(true);
-      await new Promise((r) => setTimeout(r, 230));
+      const waveDone = cells(true);
+      await sleep(230);
+      if (id !== run) return;
       menu.classList.add("flying");
       const panelsOut = fly(true);
-      await wave;
+      await waveDone;
+      if (id !== run) return;
       menu.classList.remove("covering");
       await panelsOut;
+      if (id !== run) return;
       menu.classList.remove("flying");
       menu.classList.add("landed");
     }
     // Keyboard users land on the current section's panel; a mouse or touch open leaves nothing highlighted
     if (keyboard) (panels.find((p) => p.getAttribute("aria-current") === "page") ?? panels[0]).focus();
-    busy = false;
   }
 
   async function hide() {
-    if (!open || busy) return;
-    busy = true;
+    if (!open) return;
     open = false;
+    const id = ++run;
+    // An opening that has not landed yet gets turned around instead of playing the whole close
+    const turning = !menu.classList.contains("landed");
     btn.setAttribute("aria-expanded", "false");
     menu.classList.remove("landed");
-
     (document.activeElement as HTMLElement | null)?.blur();
 
     if (!calm.matches) {
-      // The opening in reverse: the panels fly home over solid ground first, and only as the last of them lands
-      // does the wave start clearing in toward the icon. The page never shows behind full-size panels.
-      const home = fly(false);
-      await new Promise((r) => setTimeout(r, 300));
-      menu.classList.add("covering", "clearing");
-      const wave = cells(false, 340);
-      await home;
-      btn.classList.remove("gone");
-      await wave;
+      if (turning) {
+        // Panels that have not left the icon yet stay hidden; ones in flight stay visible while they rewind
+        menu.classList.add("covering");
+        if (flights().length) menu.classList.add("clearing");
+        await Promise.all([cells(false, 220), rewind()]);
+      } else {
+        // The opening in reverse: the panels fly home over solid ground first, and only as the last of them lands
+        // does the wave start clearing in toward the icon. The page never shows behind full-size panels.
+        const home = fly(false);
+        await sleep(300);
+        if (id !== run) return;
+        menu.classList.add("covering", "clearing");
+        const waveDone = cells(false, 340);
+        await home;
+        if (id !== run) return;
+        btn.classList.remove("gone");
+        await waveDone;
+      }
+      if (id !== run) return;
     }
     btn.classList.remove("gone");
-    menu.classList.remove("is-open", "covering", "clearing");
+    menu.classList.remove("is-open", "covering", "clearing", "flying");
     panels.forEach((p) => p.getAnimations().forEach((a) => a.cancel()));
     document.documentElement.classList.remove("menu-open");
     if (!btn.matches(":hover")) btn.classList.remove("up");
     if (location.hash === "#menu") history.replaceState(history.state, "", location.pathname + location.search);
-    btn.focus();
-    busy = false;
+    btn.focus({ preventScroll: true });
   }
+
+  const toggle = () => (open ? hide() : show());
 
   // A click with detail 0 came from the keyboard (Enter or Space)
   let keyboard = false;
   btn.addEventListener("click", (e) => {
     e.preventDefault();
     keyboard = e.detail === 0;
-    open ? hide() : show();
+    toggle();
   });
   btn.addEventListener("pointerenter", stand);
   btn.addEventListener("pointerleave", () => !open && btn.classList.remove("up"));
@@ -242,8 +291,55 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   });
   addEventListener("keydown", (e) => {
     if (e.key === "Escape") hide();
+    // Space toggles the menu from the button (a link does not do that on its own) and, while the menu is open or
+    // opening, sends it back from anywhere except a panel, where Space follows the link
+    if (e.key === " " && !e.repeat) {
+      const onPanel = (document.activeElement as Element | null)?.closest?.("[data-panel]");
+      if (document.activeElement === btn || (open && !onPanel)) {
+        e.preventDefault();
+        keyboard = document.activeElement === btn;
+        toggle();
+      }
+    }
   });
   document.addEventListener("menu:open", () => show());
+
+  // Fluid between layouts: when the window crosses from tall panels to wide bands (or back) while the menu is open,
+  // each panel morphs from where it was to where it now sits instead of jumping. Rects are recorded at the end of
+  // every frame that resized, so the change handler, which runs earlier in the next frame, still has the old ones.
+  let before = panels.map((p) => p.getBoundingClientRect());
+  let pending = 0;
+  addEventListener("resize", () => {
+    if (!open || pending) return;
+    pending = requestAnimationFrame(() => {
+      pending = 0;
+      before = panels.map((p) => p.getBoundingClientRect());
+    });
+  });
+  flat.addEventListener("change", () => {
+    if (!open || calm.matches || !menu.classList.contains("landed")) {
+      before = panels.map((p) => p.getBoundingClientRect());
+      return;
+    }
+    panels.forEach((p, i) => {
+      p.getAnimations().forEach((a) => a.cancel());
+      const to = p.getBoundingClientRect();
+      const f = before[i];
+      if (!to.width || !to.height || !f.width) return;
+      p.animate(
+        [
+          { transform: `translate(${f.left - to.left}px, ${f.top - to.top}px) scale(${f.width / to.width}, ${f.height / to.height})` },
+          { transform: "none" },
+        ],
+        { duration: 460, delay: i * 25, easing: color("--spring-firm"), fill: "backwards" },
+      );
+      // The word turns between upright and level, so it fades back in once its panel has its new shape
+      p.querySelectorAll(".word, .glyph").forEach((el) =>
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: 220 + i * 25, easing: "ease-out", fill: "backwards" }),
+      );
+    });
+    if (flat.matches) btn.classList.remove("up");
+  });
 
   // The panel icons, set in ASCII. Each icon is drawn once into a small canvas; then every character cell of a
   // monospace grid takes a character by how much of it the drawing covers, from a space up to @. Hovering a panel
@@ -296,8 +392,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
         let sum = 0;
         for (let yy = 0; yy < S; yy++)
           for (let xx = 0; xx < S; xx++) sum += data[((r * S + yy) * c.width + col * S + xx) * 4 + 3];
+        // Barely touched cells stay empty, so the edge is clean instead of a scatter of dots
         const cover = sum / (S * S * 255);
-        out += RAMP[Math.min(RAMP.length - 1, Math.round(cover * (RAMP.length - 1)))];
+        out += cover < 0.08 ? " " : RAMP[Math.max(1, Math.min(RAMP.length - 1, Math.round(cover * (RAMP.length - 1))))];
       }
       out += "\n";
     }
@@ -313,7 +410,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     pre.closest("[data-panel]")?.addEventListener("pointerenter", () => {
       if (calm.matches) return;
       cancelAnimationFrame(raf);
-      const settle = Array.from(art, () => 60 + Math.random() * 360);
+      const settle = Array.from(art, () => 40 + Math.random() * 300);
       const t0 = performance.now();
       const tick = (now: number) => {
         const t = now - t0;
@@ -525,6 +622,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     letter-spacing: 0;
     color: var(--ink);
     rotate: -14deg;
+    /* Its own layer: grayscale antialiasing, so small characters never pick up colored fringes */
+    will-change: transform;
+    -webkit-font-smoothing: antialiased;
     pointer-events: none;
     user-select: none;
     transition: color var(--wash);

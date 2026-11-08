@@ -168,15 +168,13 @@ const imageUrl = new URL(image, Astro.site);
         } catch {}
       });
 
-      // Arriving: run the refresh from the click point, and let the page's title rise in as the wave passes
+      // Arriving: run the refresh from the click point
       const html = document.documentElement;
       const turn = (window as unknown as { __turn?: { x: number; y: number; ground: string } }).__turn;
       if (turn && html.classList.contains("turning")) {
         const flash = getComputedStyle(html).getPropertyValue("--paper").trim();
-        const wave = revealPage({ x: turn.x, y: turn.y }, turn.ground, flash);
-        html.classList.add("arriving");
+        revealPage({ x: turn.x, y: turn.y }, turn.ground, flash);
         html.classList.remove("turning");
-        wave.then(() => setTimeout(() => html.classList.remove("arriving"), 700));
       }
     </script>
 
