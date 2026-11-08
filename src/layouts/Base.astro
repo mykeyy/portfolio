@@ -85,6 +85,62 @@ const imageUrl = new URL(image, Astro.site);
     <meta name="twitter:image:alt" content={imageAlt} />
 
     <link rel="preload" href="/fonts/geist-mono-variable-latin.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Page transitions. Runs in the head, before the first frame of the new page. Two kinds:
+         - Opened from a menu panel: the new page zooms out of that panel's box (a view transition).
+         - Any other link: the new page arrives covered in the old page's ground color and an e-ink refresh clears
+           it from the point that was clicked (src/lib/eink.ts, started at the end of <body>).
+         Back and forward, reduced motion, and browsers without these features simply show the page. -->
+    <script is:inline>
+      (() => {
+        const html = document.documentElement;
+        const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const take = (key) => {
+          try {
+            const v = JSON.parse(sessionStorage.getItem(key) || "null");
+            sessionStorage.removeItem(key);
+            return v && Date.now() - v.t < 4000 ? v : null;
+          } catch {
+            return null;
+          }
+        };
+        const back = performance.getEntriesByType("navigation")[0]?.type === "back_forward";
+        const turn = take("page-turn");
+        if (turn && !calm && !back) {
+          html.classList.add("turning");
+          html.style.setProperty("--turn-ground", turn.ground);
+          window.__turn = turn;
+        }
+        const panel = take("from-panel");
+        addEventListener("pagereveal", (e) => {
+          const vt = e.viewTransition;
+          if (!vt) return;
+          const nav = window.navigation && navigation.activation;
+          const traverse = nav && nav.navigationType === "traverse";
+          if (!panel || traverse || calm) {
+            vt.ready.catch(() => {});
+            vt.finished.catch(() => {});
+            vt.skipTransition();
+            return;
+          }
+          const from = panel;
+        html.classList.add("from-panel");
+        vt.ready.then(() => {
+          const w = innerWidth, h = innerHeight;
+          html.animate(
+            { clipPath: [`inset(${from.top}px ${w - from.right}px ${h - from.bottom}px ${from.left}px)`, "inset(0px 0px 0px 0px)"] },
+            {
+              duration: 620,
+              easing: getComputedStyle(html).getPropertyValue("--spring-firm").trim() || "ease-out",
+              pseudoElement: "::view-transition-new(root)",
+              fill: "both",
+            },
+          );
+        });
+          vt.finished.finally(() => html.classList.remove("from-panel"));
+        });
+      })();
+    </script>
   </head>
   <body class:list={{ cover }}>
     <a class="skip caps" href="#main">Skip to content</a>
@@ -93,6 +149,35 @@ const imageUrl = new URL(image, Astro.site);
       <slot />
     </main>
     {!cover && <Footer />}
+
+    <script>
+      import { revealPage } from "../lib/eink";
+
+      // Leaving: remember where the click was and the color of this page's ground, for the next page's refresh.
+      // Only plain clicks on links to another page of this site; the menu panels have their own transition.
+      document.addEventListener("click", (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const a = (e.target as Element).closest?.("a[href]") as HTMLAnchorElement | null;
+        if (!a || a.target || a.hasAttribute("download") || a.hasAttribute("data-panel")) return;
+        const url = new URL(a.href, location.href);
+        if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) return;
+        try {
+          const ground = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+          sessionStorage.setItem("page-turn", JSON.stringify({ x: e.clientX, y: e.clientY, ground, t: Date.now() }));
+        } catch {}
+      });
+
+      // Arriving: run the refresh from the click point, and let the page's title rise in as the wave passes
+      const html = document.documentElement;
+      const turn = (window as unknown as { __turn?: { x: number; y: number; ground: string } }).__turn;
+      if (turn && html.classList.contains("turning")) {
+        const flash = getComputedStyle(html).getPropertyValue("--paper").trim();
+        const wave = revealPage({ x: turn.x, y: turn.y }, turn.ground, flash);
+        html.classList.add("arriving");
+        html.classList.remove("turning");
+        wave.then(() => setTimeout(() => html.classList.remove("arriving"), 700));
+      }
+    </script>
 
     <script>
       // Unique visitors, on every page including the cover: a browser's first visit adds one to the total, later

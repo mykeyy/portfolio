@@ -149,6 +149,12 @@ const bibtex = [
                   </Wipe>
                 </li>
               )}
+              <li class="top">
+                <Wipe href="#main">
+                  <span class="sec"><Icon name="arrow-up" /></span>
+                  Back to top
+                </Wipe>
+              </li>
             </ol>
           </nav>
         )
@@ -197,6 +203,11 @@ const bibtex = [
     </div>
   </article>
 
+  <Wipe href="#main" class="to-top caps" data-to-top aria-label="Back to top">
+    <Icon name="arrow-up" />
+    Top
+  </Wipe>
+
   {
     more.length > 0 && (
       <section class="more">
@@ -218,9 +229,13 @@ const bibtex = [
   const progress = document.querySelector<HTMLElement>("[data-progress]");
   const article = document.querySelector<HTMLElement>(".piece");
 
+  // Back to top on phones (and on pieces without a contents list): shown once the reader is three screens down
+  const toTop = document.querySelector<HTMLElement>("[data-to-top]");
+
   let frame = 0;
   const update = () => {
     frame = 0;
+    toTop?.classList.toggle("shown", scrollY > innerHeight * 3);
     const line = innerHeight / 3;
     let current = -1;
     pairs.forEach((p, i) => {
@@ -269,6 +284,31 @@ const bibtex = [
     background: var(--paper);
     transform: scaleX(0);
     transform-origin: left;
+  }
+
+  /* Back to top: a fixed button in the lower right, on phones and on pieces without the sticky contents list */
+  :global(.wipe.to-top) {
+    position: fixed;
+    right: var(--pad);
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 30;
+    background: var(--ink);
+    outline: var(--rule);
+    outline-offset: -2px;
+    opacity: 0;
+    translate: 0 12px;
+    pointer-events: none;
+    transition: opacity var(--dur-fast) ease-out, translate var(--dur) var(--spring);
+  }
+
+  :global(.wipe.to-top.shown) { opacity: 1; translate: 0 0; pointer-events: auto; }
+
+  @media (min-width: 760px) {
+    .piece:has(.has-contents) ~ :global(.to-top) { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.wipe.to-top) { transition: none; }
   }
 
   .piece { padding-top: clamp(24px, 4vw, 56px); }
@@ -357,17 +397,22 @@ const bibtex = [
 
   .contents-name { margin-bottom: 10px; }
 
+  /* The rules run as wide as the highlight bar, both hanging past the column by --hang */
   .contents ol {
     list-style: none;
     border-top: var(--rule);
+    margin-inline: calc(-1 * var(--hang));
   }
 
   .contents li { border-bottom: var(--rule); }
 
+  /* Back to top sits apart from the sections, after a gap */
+  .contents li.top { margin-top: 18px; border-top: var(--rule); }
+  .contents li.top :global(.icon) { width: 1em; height: 1em; }
+
   .contents :global(.wipe) {
     display: flex;
-    width: calc(100% + 1em);
-    margin-inline: -0.5em;
+    width: 100%;
   }
 
   .contents :global(.lbl) {
@@ -375,7 +420,7 @@ const bibtex = [
     grid-template-columns: 2ch minmax(0, 1fr);
     gap: 0.6em;
     align-items: baseline;
-    padding-block: 0.6em;
+    padding: 0.6em var(--hang);
   }
 
   .sec { font-variant-numeric: tabular-nums; }

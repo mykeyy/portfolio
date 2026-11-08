@@ -127,8 +127,9 @@ const sizes = {
   const viewer = document.querySelector<HTMLDialogElement>("[data-viewer]");
   const stage = viewer?.querySelector<HTMLElement>("[data-stage]");
   const calm = matchMedia("(prefers-reduced-motion: reduce)");
-  const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
-  const EASE_IN = "cubic-bezier(0.64, 0, 0.78, 0)";
+  // The site's firm spring in, a quick accelerating curve out (tokens in global.css)
+  const EASE_OUT = getComputedStyle(document.documentElement).getPropertyValue("--spring-firm").trim() || "ease-out";
+  const EASE_IN = "cubic-bezier(0.55, 0, 0.75, 0)";
   let current = 0;
   let busy = false;
 

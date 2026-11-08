@@ -59,11 +59,12 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   // Phones and portrait tablets get the landscape menu: the icon stays flat and the panels are wide bands
   const flat = matchMedia("(max-width: 759px), (orientation: portrait) and (max-width: 1023px)");
   const stand = () => !flat.matches && btn.classList.add("up");
-  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
   let open = false;
   let busy = false;
 
   const color = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // Leaving is quicker than arriving and accelerates into the icon
+  const EASE_IN = "cubic-bezier(0.55, 0, 0.75, 0)";
 
   // The cells: an e-ink refresh. A wave of squares spreads out from the menu button; each square flashes the
   // figure color once (the erase) and then settles on the new state: the ground color when covering, the page
@@ -73,13 +74,18 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   // the far corner in toward the button as the panels fly home.
   function cells(cover: boolean, duration = 420) {
     return new Promise<void>((done) => {
+      // Everything is drawn in whole device pixels. At 125% or 150% display scaling a cell of, say, 14 CSS px is
+      // 17.5 device pixels, and edges that fall between pixels leave faint seams between neighbouring cells. So the
+      // canvas is sized in whole device pixels, cells are a multiple of 4 CSS px (whole device pixels at 1, 1.25,
+      // 1.5, 1.75 and 2), and each cell is filled from its own rounded left/top edge to its neighbour's.
       const dpr = Math.min(devicePixelRatio || 1, 2);
       const w = innerWidth, h = innerHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      canvas.width = Math.ceil(w * dpr);
+      canvas.height = Math.ceil(h * dpr);
       const ctx = canvas.getContext("2d")!;
-      ctx.scale(dpr, dpr);
-      const size = Math.max(14, Math.round(Math.min(w, h) / 26));
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const size = Math.max(16, Math.round(Math.min(w, h) / 26 / 4) * 4);
+      const edge = (n: number) => Math.round(n * size * dpr);
       const cols = Math.ceil(w / size), rows = Math.ceil(h / size);
       const spread = duration - FLASH;
       // A cell's turn comes with its distance from the button, with a touch of noise so the front is a slightly
@@ -96,7 +102,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
       const frame = (now: number) => {
         const t = now - t0;
-        ctx.clearRect(0, 0, w, h);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < starts.length; i++) {
           const p = t - starts[i];
           let fill: string | null;
@@ -105,7 +111,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
           else fill = cover ? ink : null;
           if (!fill) continue;
           ctx.fillStyle = fill;
-          ctx.fillRect((i % cols) * size, Math.floor(i / cols) * size, size, size);
+          const c = i % cols, r = Math.floor(i / cols);
+          ctx.fillRect(edge(c), edge(r), edge(c + 1) - edge(c), edge(r + 1) - edge(r));
         }
         if (t < duration) requestAnimationFrame(frame);
         else done();
@@ -127,10 +134,11 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
         const start = `translate(${f.left - to.left}px, ${f.top - to.top}px) scale(${f.width / to.width}, ${f.height / to.height})`;
         const frames = out ? [{ transform: start }, { transform: "none" }] : [{ transform: "none" }, { transform: start }];
         // Home again is the flight out played backwards: same length, mirrored easing, reversed stagger
+        // Out on the firm spring (a hair of overshoot as they land); home faster, accelerating into the icon
         return panel.animate(frames, {
-          duration: 460,
-          delay: out ? i * 45 : (panels.length - 1 - i) * 45,
-          easing: out ? EASE : "cubic-bezier(0.64, 0, 0.78, 0)",
+          duration: out ? 560 : 320,
+          delay: out ? i * 45 : (panels.length - 1 - i) * 30,
+          easing: out ? color("--spring-firm") : EASE_IN,
           fill: "both",
         }).finished;
       }),
@@ -181,9 +189,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
       // The opening in reverse: the panels fly home over solid ground first, and only as the last of them lands
       // does the wave start clearing in toward the icon. The page never shows behind full-size panels.
       const home = fly(false);
-      await new Promise((r) => setTimeout(r, 420));
+      await new Promise((r) => setTimeout(r, 300));
       menu.classList.add("covering", "clearing");
-      const wave = cells(false, 420);
+      const wave = cells(false, 340);
       await home;
       btn.classList.remove("gone");
       await wave;
@@ -209,6 +217,16 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   btn.addEventListener("pointerleave", () => !open && btn.classList.remove("up"));
   btn.addEventListener("focus", stand);
   btn.addEventListener("blur", () => !open && btn.classList.remove("up"));
+
+  // Opening a section: the next page grows out of the panel that was clicked (see the script in Base.astro)
+  panels.forEach((panel) =>
+    panel.addEventListener("click", () => {
+      const r = panel.getBoundingClientRect();
+      try {
+        sessionStorage.setItem("from-panel", JSON.stringify({ top: r.top, right: r.right, bottom: r.bottom, left: r.left, t: Date.now() }));
+      } catch {}
+    }),
+  );
 
   menu.addEventListener("click", (e) => {
     if (!(e.target as Element).closest("[data-panel]")) hide();
@@ -259,8 +277,9 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     width: 100%;
     height: calc(var(--s) * 4 / 22);
     background: currentColor;
-    transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-      width 0.3s cubic-bezier(0.22, 1, 0.36, 1), height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-property: left, top, width, height;
+    transition-duration: 0.36s;
+    transition-timing-function: var(--spring);
   }
 
   .menu-btn i:nth-child(1) { top: 0; }
@@ -317,7 +336,10 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
 
   /* One panel per section: tall, white, the name set sideways in the display face, reading upward */
   .panel {
-    --wash: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    --wash: var(--dur) var(--spring);
+    /* The hover frame. A hollow frame on blue reads smaller and lighter than the solid white panels beside it, so
+       it is drawn heavier than a rule to hold the same mass. */
+    --edge: clamp(3px, 0.32vw, 5px);
     position: relative;
     isolation: isolate;
     display: flex;
@@ -331,8 +353,8 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
     text-decoration: none;
     transform-origin: 0 0;
     /* A figure-colored edge, invisible at rest, keeps the panel's shape while the ground-colored fill rises */
-    outline: 2px solid var(--paper);
-    outline-offset: -2px;
+    outline: var(--edge) solid var(--paper);
+    outline-offset: calc(-1 * var(--edge));
   }
 
   .panel:focus-visible { outline-width: 4px; outline-offset: -4px; }
@@ -352,7 +374,7 @@ const current = (href: string) => (path === href || path.startsWith(`${href}/`) 
   /* Labels rise into place once their panel has landed (the word is turned 180deg, so its local top is the
      visual bottom) */
   .menu.js .panel > .word { clip-path: inset(0 0 100% 0); transition: clip-path 0.15s ease-in; }
-  .menu.landed .panel > .word { clip-path: inset(0); transition: clip-path 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+  .menu.landed .panel > .word { clip-path: inset(0); transition: clip-path 0.3s var(--spring); }
   .menu.landed li:nth-child(2) .panel > .word { transition-delay: 0.04s; }
   .menu.landed li:nth-child(3) .panel > .word { transition-delay: 0.08s; }
   .menu.landed li:nth-child(4) .panel > .word { transition-delay: 0.12s; }

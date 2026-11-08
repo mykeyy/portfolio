@@ -30,19 +30,18 @@ const contacts = [
 </ul>
 
 <style>
+  /* The rules run as wide as the highlight bar: rows and lines both hang past the column by --hang, and the
+     text inside lines up with the column */
   .contacts {
     list-style: none;
     border-top: var(--rule);
+    margin-inline: calc(-1 * var(--hang));
   }
 
   .contacts li { border-bottom: var(--rule); }
 
-  /* Rows hang past the column so the bar has room around the text; the text lines up with the column */
   .contact {
-    --hang: clamp(6px, 0.8vw, 12px);
     display: flex;
-    width: calc(100% + 2 * var(--hang));
-    margin-inline: calc(-1 * var(--hang));
     font-size: clamp(1rem, 0.8rem + 0.9vw, 1.75rem);
   }
 

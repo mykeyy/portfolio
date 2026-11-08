@@ -74,7 +74,7 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
 <script>
   const PLURAL: Record<string, string> = { project: "projects", research: "research pieces", note: "notes" };
 
-  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((ledger) => {
+  document.querySelectorAll<HTMLElement>("[data-ledger]").forEach((ledger, n) => {
     const bar = ledger.querySelector<HTMLElement>(".filters");
     if (!bar) return;
     const buttons = [...bar.querySelectorAll<HTMLButtonElement>("[data-filter]")];
@@ -96,7 +96,26 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
       history.replaceState(history.state, "", url);
     };
 
-    buttons.forEach((b) => b.addEventListener("click", () => show(b.dataset.filter ?? "all")));
+    // Rows glide to their new places instead of jumping: each row is its own view-transition element (styles in
+    // global.css). The names are set only for the length of the change, so on page changes the rows wipe in with
+    // the rest of the page. Reduced motion, or a browser without view transition types, gets the plain change.
+    const name = (on: boolean) =>
+      rows.forEach((row, i) => (row.style.viewTransitionName = on ? `ledger-${n}-${i}` : ""));
+    const calm = matchMedia("(prefers-reduced-motion: reduce)");
+    const change = (kind: string) => {
+      const doc = document as Document & {
+        startViewTransition?: (o: { update: () => void; types: string[] }) => { finished: Promise<void> };
+      };
+      const VT = (globalThis as { ViewTransition?: { prototype: object } }).ViewTransition;
+      if (calm.matches || !doc.startViewTransition || !VT || !("types" in VT.prototype)) {
+        show(kind);
+        return;
+      }
+      name(true);
+      doc.startViewTransition({ update: () => show(kind), types: ["filter"] }).finished.finally(() => name(false));
+    };
+
+    buttons.forEach((b) => b.addEventListener("click", () => change(b.dataset.filter ?? "all")));
 
     const asked = new URLSearchParams(location.search).get("kind");
     if (asked && buttons.some((b) => b.dataset.filter === asked && !b.disabled)) show(asked, false);
@@ -125,23 +144,19 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
     column-gap: var(--col-gap);
   }
 
+  /* The rules run as wide as the highlight bar: header, rows and lines all hang past the column by --hang, and
+     the text inside lines up with the column */
   .head {
-    padding: 0 0 10px;
+    padding: 0 var(--hang) 10px;
+    margin-inline: calc(-1 * var(--hang));
     border-bottom: var(--rule);
   }
 
-  .rows { list-style: none; }
+  .rows { list-style: none; margin-inline: calc(-1 * var(--hang)); }
   .rows li { border-bottom: var(--rule); }
   .rows li[hidden] { display: none; }
 
-  /* Rows hang a few pixels past the column on both sides so the white bar has room around the text,
-     while the text itself lines up with everything above and below. */
-  .row {
-    display: flex;
-    width: calc(100% + 2 * var(--hang));
-    margin-inline: calc(-1 * var(--hang));
-    --hang: clamp(6px, 0.8vw, 12px);
-  }
+  .row { display: flex; }
 
   .row > :global(.lbl) {
     flex: 1;
@@ -191,7 +206,7 @@ const verb = (kind: Kind) => (kind === "project" ? "View" : "Read");
     outline: 1px solid currentColor;
   }
 
-  .empty { padding: 22px 0; border-top: var(--rule); border-bottom: var(--rule); }
+  .empty { padding: 22px var(--hang); margin-inline: calc(-1 * var(--hang)); border-top: var(--rule); border-bottom: var(--rule); }
 
   /* Narrow screens: number, kind and year share the top line; the title and its line take the full width */
   @media (max-width: 759px) {
